@@ -10,18 +10,50 @@
 
 	let container: HTMLDivElement;
 
+	// El mapa necesita WebGL y un CDN de teselas externo. Si el equipo/red no lo
+	// permite, se muestra un resumen de la ruta en lugar de un recuadro en blanco.
+	let mapFailed = $state(false);
+
+	function webglDisponible(): boolean {
+		try {
+			const c = document.createElement('canvas');
+			return !!(
+				window.WebGLRenderingContext &&
+				(c.getContext('webgl2') || c.getContext('webgl') || c.getContext('experimental-webgl'))
+			);
+		} catch {
+			return false;
+		}
+	}
+
 	onMount(() => {
+		if (!webglDisponible()) {
+			mapFailed = true;
+			return;
+		}
+
 		const from = CITY_INFO[trip.origen]?.coords;
 		const to = CITY_INFO[trip.destino]?.coords;
 		const color = esNacional(trip.origen, trip.destino) ? COLOR_NACIONAL : COLOR_INTERNACIONAL;
 
-		const map = new maplibregl.Map({
-			container,
-			style: MAP_STYLE,
-			interactive: false,
-			renderWorldCopies: false,
-			attributionControl: { compact: true },
-		});
+		let map: maplibregl.Map;
+		try {
+			map = new maplibregl.Map({
+				container,
+				style: MAP_STYLE,
+				interactive: false,
+				renderWorldCopies: false,
+				attributionControl: { compact: true },
+			});
+		} catch {
+			mapFailed = true;
+			return;
+		}
+
+		// Si el estilo (CDN) no carga, se asume bloqueado y se muestra el respaldo.
+		let loaded = false;
+		map.on('load', () => { loaded = true; });
+		const failTimer = setTimeout(() => { if (!loaded) mapFailed = true; }, 7000);
 
 		const zonas = trip.geocercasRuta.map(id => GEOCERCAS[id]).filter(Boolean);
 		const coordKey = (c: [number, number]) => `${c[0].toFixed(3)},${c[1].toFixed(3)}`;
@@ -126,20 +158,37 @@
 		}
 
 		return () => {
+			clearTimeout(failTimer);
 			markers.forEach(m => m.remove());
 			map.remove();
 		};
 	});
+
+	// Rótulos de extremo para el respaldo (origen / destino de la ruta).
+	const rutaResumen = trip.rutaNombre.split(' - ').map(s => s.trim());
 </script>
 
 <div class="trip-map">
-	<div class="trip-map__el" bind:this={container} role="img" aria-label="Mapa ilustrativo del despacho {trip.id}: {trip.origen} a {trip.destino}, última posición {trip.ultimaUbicacion}"></div>
+	<div class="trip-map__el" class:trip-map__el--hidden={mapFailed} bind:this={container} role="img" aria-label="Mapa ilustrativo del despacho {trip.id}: {trip.origen} a {trip.destino}, última posición {trip.ultimaUbicacion}"></div>
+
+	{#if mapFailed}
+		<!-- Respaldo cuando el mapa no puede dibujarse. -->
+		<div class="trip-map__fallback">
+			<span class="icon" aria-hidden="true">public_off</span>
+			<p class="trip-map__fallback-title">Mapa interactivo no disponible</p>
+			<p class="trip-map__fallback-route">
+				{#each rutaResumen as seg, i}{#if i > 0}<span class="trip-map__fallback-arrow" aria-hidden="true"> → </span>{/if}{seg}{/each}
+			</p>
+			<p class="trip-map__fallback-note">{trip.distancia}{#if trip.gps} · última posición: {trip.ultimaUbicacion}{/if}</p>
+		</div>
+	{/if}
+
 	<div class="trip-map__badge" aria-hidden="true">
 		<span class="icon icon--sm" aria-hidden="true">local_shipping</span>
 		{trip.distancia}
 	</div>
 
-	{#if trip.geocercasRuta.length}
+	{#if trip.geocercasRuta.length && !mapFailed}
 		<div class="trip-map__legend" aria-hidden="true">
 			<span class="trip-map__legend-swatch"></span>
 			Geocercas
@@ -159,6 +208,32 @@
 		height: 100%;
 		width: 100%;
 	}
+	.trip-map__el--hidden { visibility: hidden; }
+
+	/* Respaldo cuando el mapa no puede dibujarse. */
+	.trip-map__fallback {
+		position: absolute;
+		inset: 0;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: var(--space-2);
+		padding: var(--space-6);
+		text-align: center;
+		background: var(--surface-2);
+	}
+	.trip-map__fallback .icon { font-size: 32px; color: var(--ink-3); }
+	.trip-map__fallback-title { font-size: var(--text-base); font-weight: 700; color: var(--grey-darker); }
+	.trip-map__fallback-route {
+		font-family: var(--font-display);
+		font-size: var(--text-xl);
+		font-weight: 500;
+		color: var(--grey-dark);
+		letter-spacing: -0.01em;
+	}
+	.trip-map__fallback-arrow { color: var(--grey-muted); }
+	.trip-map__fallback-note { font-size: var(--text-sm); color: var(--grey-muted); }
 	.trip-map__badge {
 		position: absolute;
 		top: 16px;
