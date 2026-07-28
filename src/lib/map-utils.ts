@@ -89,9 +89,11 @@ export function truckMarkerEl(unidad: string, color: string): HTMLElement {
 	const el = document.createElement('div');
 	el.className = 'tm-truck';
 	el.style.setProperty('--tm-color', color);
+	// El punto de posición usa el mismo icono que acompaña a la Placa (vehId),
+	// relleno. Como el punto ya lleva ese icono, la etiqueta ya no lo repite.
 	el.innerHTML =
 		`<span class="tm-truck__pulse"></span>` +
-		`<span class="tm-truck__dot"></span>` +
-		`<span class="tm-truck__label"><span class="icon tm-truck__icon">local_shipping</span>${unidad}</span>`;
+		`<span class="icon tm-truck__pin">local_shipping</span>` +
+		`<span class="tm-truck__label">${unidad}</span>`;
 	return el;
 }
