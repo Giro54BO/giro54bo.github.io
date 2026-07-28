@@ -304,7 +304,8 @@ a { color: inherit; text-decoration: none; }
 	box-shadow: var(--shadow-sm);
 	font-size: 19px;
 	line-height: 1;
-	color: var(--tm-color, var(--status-en-transito-ink));
+	/* Mismo color que el texto de la Placa (vehId) en la etiqueta del marcador. */
+	color: var(--ink-1);
 	font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 24;
 }
 .tm-truck__pulse {
