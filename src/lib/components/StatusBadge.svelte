@@ -6,7 +6,7 @@
 
 	const ICONS: Record<TripState, string> = {
 		'en-carga':        'forklift',
-		'espera-carga':    'hourglass_empty',
+		'espera-carga':    'forklift',
 		'en-transito':     'local_shipping',
 		'en-frontera':     'flag',
 		'en-descarga':     'download',

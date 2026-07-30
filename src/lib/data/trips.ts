@@ -131,7 +131,7 @@ export interface Alerta {
 
 export const STATE_LABELS: Record<TripState, string> = {
 	'en-carga':        'En carga',
-	'espera-carga':    'En espera de carga',
+	'espera-carga':    'En carga',
 	'en-transito':     'En tránsito',
 	'en-frontera':     'En frontera',
 	'en-descarga':     'En descarga',

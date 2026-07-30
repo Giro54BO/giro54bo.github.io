@@ -130,7 +130,7 @@
 		'en-frontera':     'flag',
 		'incidencia':      'report',
 		'en-carga':        'forklift',
-		'espera-carga':    'hourglass_empty',
+		'espera-carga':    'forklift',
 		'en-descarga':     'download',
 		'espera-descarga': 'pending',
 		'en-retorno':      'undo',
@@ -155,12 +155,15 @@
 		})
 	);
 
-	/** Estados presentes en las filas visibles, en orden de aparición. */
+	/** Estados presentes en las filas visibles, en orden de aparición.
+	   Se deduplica por etiqueta: "En carga" agrupa en-carga y espera-carga, así
+	   que no aparecen dos entradas iguales en la leyenda. */
 	const leyenda = $derived.by(() => {
-		const vistos = new Set<TripState>();
+		const vistas = new Set<string>();
 		const orden: TripState[] = [];
 		for (const t of filteredTrips) {
-			if (!vistos.has(t.estado)) { vistos.add(t.estado); orden.push(t.estado); }
+			const label = STATE_LABELS[t.estado];
+			if (!vistas.has(label)) { vistas.add(label); orden.push(t.estado); }
 		}
 		return orden;
 	});
