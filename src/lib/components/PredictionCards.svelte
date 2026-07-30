@@ -32,7 +32,8 @@
 	const EN_RUTA = new Set(['en-transito', 'en-frontera', 'incidencia']);
 
 	const cards = $derived.by(() => {
-		const waitingTrips = trips.filter(t => t.estado === 'espera-carga' || t.estado === 'espera-descarga');
+		// Unidades detenidas en zonas de carga/descarga (en espera de operación).
+		const waitingTrips = trips.filter(t => t.estado === 'en-carga' || t.estado === 'en-descarga');
 		const urgentTrips  = trips.filter(t => t.urgente);
 		const borderTrips  = trips.filter(t => t.estado === 'en-frontera');
 
@@ -82,7 +83,7 @@
 				comparison: 'Duración planificada origen → destino',
 			},
 			{
-				title: 'Saturación', value: `${waitingTrips.length}`,
+				title: 'En espera', value: `${waitingTrips.length}`,
 				unit: 'unidades en espera', icon: 'warehouse',
 				delta: '+1', positive: false, comparison: 'vs semana pasada: 1 unidad en espera',
 			},

@@ -71,16 +71,12 @@
 	/* ── Semantic status colors ── */
 	--status-en-carga-bg:          oklch(0.95 0.06 70);
 	--status-en-carga-ink:         oklch(0.45 0.14 65);
-	--status-espera-carga-bg:      oklch(0.96 0.04 75);
-	--status-espera-carga-ink:     oklch(0.55 0.09 70);
 	--status-en-transito-bg:       var(--green-100);
 	--status-en-transito-ink:      oklch(0.38 0.15 130);
 	--status-en-frontera-bg:       var(--info-bg);
 	--status-en-frontera-ink:      var(--info-ink);
 	--status-en-descarga-bg:       oklch(0.93 0.05 195);
 	--status-en-descarga-ink:      oklch(0.38 0.10 195);
-	--status-espera-descarga-bg:   oklch(0.95 0.03 200);
-	--status-espera-descarga-ink:  oklch(0.50 0.07 200);
 	--status-en-retorno-bg:        oklch(0.93 0.04 290);
 	--status-en-retorno-ink:       oklch(0.40 0.09 290);
 	--status-incidencia-bg:        var(--error-bg);

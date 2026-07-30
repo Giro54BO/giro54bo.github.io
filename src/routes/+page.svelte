@@ -36,8 +36,7 @@
 
 	// Estados que existen en los datos, en el orden de las pestañas de estado.
 	const ESTADO_ORDEN: TripState[] = [
-		'en-transito', 'en-frontera', 'incidencia', 'en-carga',
-		'espera-carga', 'en-descarga', 'espera-descarga', 'en-retorno',
+		'en-transito', 'en-frontera', 'incidencia', 'en-carga', 'en-descarga', 'en-retorno',
 	];
 	const estadosDisponibles = ESTADO_ORDEN.filter(e => trips.some(t => t.estado === e));
 
@@ -74,7 +73,7 @@
 	// recalcule las tarjetas, no sólo la tabla.
 	const dashTrips = $derived(
 		filtros.estado
-			? dashTripsBase.filter(t => (FILTER_GROUPS[filtros.estado!] ?? [filtros.estado!]).includes(t.estado))
+			? dashTripsBase.filter(t => t.estado === filtros.estado)
 			: dashTripsBase
 	);
 
@@ -96,21 +95,12 @@
 		{ estado: 'en-retorno'   as TripState, label: 'En retorno',   count: counts.enRetorno     },
 	]);
 
-	// Los chips "En carga"/"En descarga" agrupan también sus estados de espera
-	// (igual que los contadores de getStateCounts).
-	const FILTER_GROUPS: Partial<Record<TripState, TripState[]>> = {
-		'en-carga':    ['en-carga', 'espera-carga'],
-		'en-descarga': ['en-descarga', 'espera-descarga'],
-	};
-
 	const STATUS_COLORS: Partial<Record<TripState, { bg: string; ink: string }>> = {
 		'en-transito':     { bg: 'var(--status-en-transito-bg)',      ink: 'var(--status-en-transito-ink)'      },
 		'en-frontera':     { bg: 'var(--status-en-frontera-bg)',      ink: 'var(--status-en-frontera-ink)'      },
 		'incidencia':      { bg: 'var(--status-incidencia-bg)',       ink: 'var(--status-incidencia-ink)'       },
 		'en-carga':        { bg: 'var(--status-en-carga-bg)',         ink: 'var(--status-en-carga-ink)'         },
-		'espera-carga':    { bg: 'var(--status-espera-carga-bg)',     ink: 'var(--status-espera-carga-ink)'     },
 		'en-descarga':     { bg: 'var(--status-en-descarga-bg)',      ink: 'var(--status-en-descarga-ink)'      },
-		'espera-descarga': { bg: 'var(--status-espera-descarga-bg)', ink: 'var(--status-espera-descarga-ink)' },
 		'en-retorno':      { bg: 'var(--status-en-retorno-bg)',       ink: 'var(--status-en-retorno-ink)'       },
 	};
 
@@ -130,9 +120,7 @@
 		'en-frontera':     'flag',
 		'incidencia':      'report',
 		'en-carga':        'forklift',
-		'espera-carga':    'forklift',
 		'en-descarga':     'download',
-		'espera-descarga': 'pending',
 		'en-retorno':      'undo',
 	};
 
@@ -148,16 +136,15 @@
 		})
 		.sort((a, b) => {
 			const priority: Record<TripState, number> = {
-				incidencia: 0, 'en-frontera': 1, 'espera-carga': 2, 'espera-descarga': 2,
-				'en-carga': 3, 'en-transito': 4, 'en-descarga': 5, 'en-retorno': 6,
+				incidencia: 0, 'en-frontera': 1, 'en-carga': 2,
+				'en-transito': 3, 'en-descarga': 4, 'en-retorno': 5,
 			};
 			return priority[a.estado] - priority[b.estado];
 		})
 	);
 
-	/** Estados presentes en las filas visibles, en orden de aparición.
-	   Se deduplica por etiqueta: "En carga" agrupa en-carga y espera-carga, así
-	   que no aparecen dos entradas iguales en la leyenda. */
+	/** Estados presentes en las filas visibles, en orden de aparición
+	   (deduplicados por etiqueta). */
 	const leyenda = $derived.by(() => {
 		const vistas = new Set<string>();
 		const orden: TripState[] = [];

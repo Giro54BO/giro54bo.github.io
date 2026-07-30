@@ -1,10 +1,8 @@
 export type TripState =
 	| 'en-carga'
-	| 'espera-carga'
 	| 'en-transito'
 	| 'en-frontera'
 	| 'en-descarga'
-	| 'espera-descarga'
 	| 'en-retorno'
 	| 'incidencia';
 
@@ -131,11 +129,9 @@ export interface Alerta {
 
 export const STATE_LABELS: Record<TripState, string> = {
 	'en-carga':        'En carga',
-	'espera-carga':    'En carga',
 	'en-transito':     'En tránsito',
 	'en-frontera':     'En frontera',
 	'en-descarga':     'En descarga',
-	'espera-descarga': 'En espera de descarga',
 	'en-retorno':      'En retorno',
 	'incidencia':      'Detenido por incidencia',
 };
@@ -336,7 +332,7 @@ export const trips: Trip[] = [
 		rutaCodigo: 'BOARIC',
 		rutaNombre: 'BO - ORURO - ARICA',
 		planta: 'Oruro',
-		estado: 'espera-carga',
+		estado: 'en-carga',
 		tiempoEnEstado: '1h 20min',
 		ultimaUbicacion: 'Planta Oruro',
 		ultimaActualizacion: 'hace 12 min',
@@ -361,7 +357,7 @@ export const trips: Trip[] = [
 		urgente: false,
 		coordenadas: { lat: -17.9698, lng: -67.1069 },
 		eventos: [
-			{ id: 'e1', timestamp: '29 jul, 12:40', tipo: 'sistema', titulo: 'Unidad en espera de carga', descripcion: 'Todas las bahías de carga ocupadas.', ubicacion: 'Planta Oruro', geocerca: 'planta-oruro' },
+			{ id: 'e1', timestamp: '29 jul, 12:40', tipo: 'sistema', titulo: 'En carga', descripcion: 'Todas las bahías de carga ocupadas.', ubicacion: 'Planta Oruro', geocerca: 'planta-oruro' },
 		],
 	},
 	{
@@ -861,8 +857,8 @@ export function getStateCounts(list: Trip[]) {
 		enTransito:    list.filter(t => t.estado === 'en-transito').length,
 		enFrontera:    list.filter(t => t.estado === 'en-frontera').length,
 		conIncidencia: list.filter(t => t.estado === 'incidencia').length,
-		enCarga:       list.filter(t => t.estado === 'en-carga' || t.estado === 'espera-carga').length,
-		enDescarga:    list.filter(t => t.estado === 'en-descarga' || t.estado === 'espera-descarga').length,
+		enCarga:       list.filter(t => t.estado === 'en-carga').length,
+		enDescarga:    list.filter(t => t.estado === 'en-descarga').length,
 		enRetorno:     list.filter(t => t.estado === 'en-retorno').length,
 	};
 }

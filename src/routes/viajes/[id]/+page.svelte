@@ -53,12 +53,10 @@
 
 	/** Avance estimado del viaje según su estado (barra de progreso). */
 	const PROGRESS: Record<TripState, number> = {
-		'espera-carga':    15,
 		'en-carga':        20,
 		'en-transito':     55,
 		'incidencia':      60,
 		'en-frontera':     70,
-		'espera-descarga': 85,
 		'en-descarga':     90,
 		'en-retorno':      95,
 	};

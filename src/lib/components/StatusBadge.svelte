@@ -6,11 +6,9 @@
 
 	const ICONS: Record<TripState, string> = {
 		'en-carga':        'forklift',
-		'espera-carga':    'forklift',
 		'en-transito':     'local_shipping',
 		'en-frontera':     'flag',
 		'en-descarga':     'download',
-		'espera-descarga': 'pending',
 		'en-retorno':      'undo',
 		'incidencia':      'report',
 	};
@@ -36,11 +34,9 @@
 	.badge--sm { padding: 2px 8px; font-size: var(--text-xs); }
 
 	.badge--en-carga        { background: var(--status-en-carga-bg);        color: var(--status-en-carga-ink); }
-	.badge--espera-carga    { background: var(--status-espera-carga-bg);    color: var(--status-espera-carga-ink); }
 	.badge--en-transito     { background: var(--status-en-transito-bg);     color: var(--status-en-transito-ink); }
 	.badge--en-frontera     { background: var(--status-en-frontera-bg);     color: var(--status-en-frontera-ink); }
 	.badge--en-descarga     { background: var(--status-en-descarga-bg);     color: var(--status-en-descarga-ink); }
-	.badge--espera-descarga { background: var(--status-espera-descarga-bg); color: var(--status-espera-descarga-ink); }
 	.badge--en-retorno      { background: var(--status-en-retorno-bg);      color: var(--status-en-retorno-ink); }
 	.badge--incidencia      { background: var(--status-incidencia-bg);      color: var(--status-incidencia-ink); }
 </style>
