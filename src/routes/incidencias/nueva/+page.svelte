@@ -95,8 +95,11 @@
 		registrada = true;
 	}
 
-	function handleCancel() { goto('/'); }
-	function closeConfirmacion() { goto('/'); }
+	// Al salir se vuelve al origen: al viaje si el formulario se abrió desde su
+	// ficha (?viaje=id), o al dashboard si se abrió desde la sección Incidencias.
+	const origenHref = preselectedId ? `/viajes/${preselectedId}` : '/';
+	function handleCancel() { goto(origenHref); }
+	function closeConfirmacion() { goto(origenHref); }
 
 	function onTipoSelect(value: IncidentTipo) {
 		form.tipo = value;
@@ -117,7 +120,7 @@
 <div class="inc-page">
 	<!-- ── Encabezado ── -->
 	<header class="subheader">
-		<a href="/" class="subheader__back">
+		<a href={origenHref} class="subheader__back">
 			<span class="icon icon--sm" aria-hidden="true">arrow_back</span>
 			Volver
 		</a>
