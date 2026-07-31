@@ -123,26 +123,36 @@
 		return result;
 	});
 
-	// ── Notificaciones del despacho ──
-	type NotifFilter = 'todas' | 'criticas' | 'recientes';
-	let notifFilter = $state<NotifFilter>('todas');
-	let dismissed   = $state<string[]>([]);
+	// ── Incidencias del despacho ──
+	let dismissed  = $state<string[]>([]);   // eliminadas de la lista
+	let resolved   = $state<string[]>([]);   // resueltas — permanecen con su etiqueta
 	let resolveAlertId = $state<string | null>(null);
 	let resolutionComment = $state('');
 	let resolutionError = $state('');
 	let resolutionCompleted = $state(false);
 
-	function esReciente(tiempo: string): boolean {
-		const m = tiempo.match(/(\d+)\s*min/);
-		return !!m && +m[1] <= 15;
+	/** "hace 30 min" / "hace 3 h" / "hace 2 días" → minutos transcurridos. */
+	function minutosDesde(tiempo: string): number {
+		const m = tiempo.match(/(\d+)\s*(min|h|d)/i);
+		if (!m) return Number.MAX_SAFE_INTEGER;
+		const n = +m[1];
+		const u = m[2].toLowerCase();
+		return u.startsWith('d') ? n * 1440 : u === 'h' ? n * 60 : n;
 	}
 
-	const tripAlertas = $derived(alertas.filter(a => a.tripId === trip.id && !dismissed.includes(a.id)));
-	const criticas    = $derived(tripAlertas.filter(a => a.tipo === 'critico'));
-	const recientes   = $derived(tripAlertas.filter(a => esReciente(a.tiempo)));
-	const visibleAlertas = $derived(
-		notifFilter === 'criticas' ? criticas : notifFilter === 'recientes' ? recientes : tripAlertas
+	// Todas las incidencias del despacho en una sola lista, más reciente primero.
+	// Las resueltas permanecen (con su etiqueta); sólo salen las eliminadas.
+	const tripAlertas = $derived(
+		alertas
+			.filter(a => a.tripId === trip.id && !dismissed.includes(a.id))
+			.slice()
+			.sort((a, b) => minutosDesde(a.tiempo) - minutosDesde(b.tiempo))
 	);
+
+	// Sólo se puede registrar una incidencia en despachos activos. Los que ya
+	// llegaron a destino (unidad entregada, en retorno) no son reportables — es
+	// el mismo criterio que usa el formulario para su lista de viajes.
+	const puedeReportar = $derived(trip.estado !== 'en-retorno');
 
 	const alertaTypeLabels: Record<string, string> = {
 		critico: 'Crítico', retraso: 'Retraso', parada: 'Parada obligatoria', desvio: 'Desvío de ruta',
@@ -170,7 +180,8 @@
 		}
 		if (!resolveAlertId) return;
 
-		dismissed = [...dismissed, resolveAlertId];
+		// La incidencia no se retira: se marca como resuelta y permanece en la lista.
+		if (!resolved.includes(resolveAlertId)) resolved = [...resolved, resolveAlertId];
 		resolutionCompleted = true;
 	}
 
@@ -718,55 +729,47 @@
 				</div>
 			</div>
 
-			<!-- Notificaciones -->
+			<!-- Incidencias del despacho: una sola lista cronológica. Las resueltas
+			     permanecen con su etiqueta "Resuelta". -->
 			<div class="notif-section">
-				<h2 class="section-heading">
-					<span class="icon section-heading__icon" aria-hidden="true">notifications</span>
-					Notificaciones
-				</h2>
-
-				<div class="notif-chips" role="toolbar" aria-label="Filtros de notificaciones">
-					<button
-						class="filter-chip"
-						class:filter-chip--active={notifFilter === 'todas'}
-						onclick={() => notifFilter = 'todas'}
-						aria-pressed={notifFilter === 'todas'}
-					>
-						<span class="icon filter-chip__icon" aria-hidden="true">filter_list</span>
-						Todas
-						<span class="filter-chip__count">{tripAlertas.length}</span>
-					</button>
-					<button
-						class="filter-chip"
-						class:filter-chip--active={notifFilter === 'criticas'}
-						onclick={() => notifFilter = 'criticas'}
-						aria-pressed={notifFilter === 'criticas'}
-					>
-						<span class="icon filter-chip__icon" aria-hidden="true">report</span>
-						Críticas
-						<span class="filter-chip__count">{criticas.length}</span>
-					</button>
-					<button
-						class="filter-chip"
-						class:filter-chip--active={notifFilter === 'recientes'}
-						onclick={() => notifFilter = 'recientes'}
-						aria-pressed={notifFilter === 'recientes'}
-					>
-						<span class="icon filter-chip__icon" aria-hidden="true">history</span>
-						Recientes
-						<span class="filter-chip__count">{recientes.length}</span>
-					</button>
+				<div class="notif-header">
+					<h2 class="section-heading">
+						<span class="icon section-heading__icon" aria-hidden="true">warning</span>
+						Incidencias
+					</h2>
+					{#if puedeReportar}
+						<a class="btn-nueva-inc" href="/incidencias/nueva?viaje={trip.id}">
+							Nueva incidencia
+							<span class="icon" aria-hidden="true">add</span>
+						</a>
+					{:else}
+						<button
+							class="btn-nueva-inc"
+							type="button"
+							disabled
+							title="El despacho ya llegó a destino; no se pueden registrar incidencias."
+						>
+							Nueva incidencia
+							<span class="icon" aria-hidden="true">add</span>
+						</button>
+					{/if}
 				</div>
 
-				{#if visibleAlertas.length === 0}
+				{#if tripAlertas.length === 0}
 					<div class="notif-empty">
-						<span class="icon icon--xl" aria-hidden="true">notifications_off</span>
-						<p>Sin notificaciones para este despacho.</p>
+						<span class="icon icon--xl" aria-hidden="true">check_circle</span>
+						<p>Sin incidencias registradas para este despacho.</p>
 					</div>
 				{:else}
 					<ul class="notif-list" role="list">
-						{#each visibleAlertas as alerta (alerta.id)}
-							<li class="notif-card" role="article" aria-label="Alerta {alertaTypeLabels[alerta.tipo]}">
+						{#each tripAlertas as alerta (alerta.id)}
+							{@const estaResuelta = resolved.includes(alerta.id)}
+							<li
+								class="notif-card"
+								class:notif-card--resuelta={estaResuelta}
+								role="article"
+								aria-label="Incidencia {alertaTypeLabels[alerta.tipo]}{estaResuelta ? ', resuelta' : ''}"
+							>
 								<div class="notif-card__header">
 									<span class="alert-type alert-type--{alerta.tipo}">
 										<span class="icon icon--sm" aria-hidden="true">
@@ -774,6 +777,12 @@
 										</span>
 										{alertaTypeLabels[alerta.tipo]}
 									</span>
+									{#if estaResuelta}
+										<span class="alert-type alert-type--resuelta">
+											<span class="icon icon--sm" aria-hidden="true">check_circle</span>
+											Resuelta
+										</span>
+									{/if}
 								</div>
 								<p class="notif-card__message">{alerta.mensaje}</p>
 								<span class="notif-card__time">{alerta.tiempo}</span>
@@ -782,10 +791,12 @@
 										Eliminar
 										<span class="icon" aria-hidden="true">delete</span>
 									</button>
-									<button class="btn-resolver" type="button" onclick={() => openResolution(alerta.id)}>
-										Resolver incidencia
-										<span class="icon" aria-hidden="true">check</span>
-									</button>
+									{#if !estaResuelta}
+										<button class="btn-resolver" type="button" onclick={() => openResolution(alerta.id)}>
+											Resolver incidencia
+											<span class="icon" aria-hidden="true">check</span>
+										</button>
+									{/if}
 								</div>
 							</li>
 						{/each}
@@ -1606,60 +1617,43 @@
 		margin-top: var(--space-2);
 	}
 
-	.notif-chips {
+	/* Encabezado de la sección: título a la izquierda, acción a la derecha. */
+	.notif-header {
 		display: flex;
 		align-items: center;
-		gap: var(--space-6);
+		justify-content: space-between;
+		gap: var(--space-4);
+		flex-wrap: wrap;
 	}
-
-	.filter-chip {
+	.btn-nueva-inc {
 		display: inline-flex;
 		align-items: center;
-		gap: 6px;
-		padding: 7px var(--space-4);
-		border-radius: var(--radius-full);
-		font-size: var(--text-sm);
-		font-weight: 500;
-		font-family: inherit;
-		border: none;
+		gap: var(--space-2);
+		min-height: 40px;
+		padding: 0 var(--space-4);
+		border: 1.5px solid var(--blue-dark);
+		border-radius: var(--radius-md);
 		background: transparent;
-		color: var(--grey-normal);
-		cursor: pointer;
-		white-space: nowrap;
-		filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.04));
-		transition:
-			background var(--duration-fast) var(--ease-out-quart),
-			color      var(--duration-fast) var(--ease-out-quart);
-	}
-	.filter-chip:hover { background: var(--surface); }
-	.filter-chip:focus-visible { outline: 2px solid var(--blue-dark); outline-offset: 2px; }
-	.filter-chip--active {
-		background: var(--blue-dark-active);
-		color: white;
-		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-	}
-	.filter-chip__icon {
-		font-size: 16px;
-		font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20;
-	}
-	.filter-chip__count {
+		font: inherit;
 		font-size: var(--text-sm);
 		font-weight: 700;
-		background: oklch(0 0 0 / 0.09);
-		color: var(--grey-dark);
-		border-radius: var(--radius-full);
-		min-width: 20px;
-		height: 20px;
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		padding: 0 4px;
-		line-height: 1;
-	}
-	.filter-chip--active .filter-chip__count {
-		background: var(--blue-lighter);
 		color: var(--blue-dark);
+		cursor: pointer;
+		white-space: nowrap;
+		transition: background var(--duration-fast) var(--ease-out-quart);
 	}
+	.btn-nueva-inc:hover { background: var(--teal-50); }
+	.btn-nueva-inc:focus-visible { outline: 2px solid var(--blue-dark); outline-offset: 2px; }
+	.btn-nueva-inc .icon { font-size: 18px; }
+	/* Deshabilitado: despacho que ya llegó a destino. */
+	.btn-nueva-inc:disabled {
+		border-color: var(--grey-light);
+		color: var(--grey-muted);
+		background: transparent;
+		cursor: not-allowed;
+	}
+	.btn-nueva-inc:disabled:hover { background: transparent; }
+
 
 	.notif-empty {
 		display: flex;
@@ -1693,8 +1687,8 @@
 	.notif-card__header {
 		display: flex;
 		align-items: center;
-		justify-content: space-between;
 		gap: var(--space-2);
+		flex-wrap: wrap;
 	}
 
 	.alert-type {
@@ -1710,6 +1704,10 @@
 	.alert-type--retraso { background: var(--warn-bg);  color: var(--warn-ink);  }
 	.alert-type--parada  { background: var(--info-bg);  color: var(--info-ink);  }
 	.alert-type--desvio  { background: var(--info-bg);  color: var(--info-ink);  }
+	/* Etiqueta que acompaña al tipo cuando la incidencia ya se resolvió. */
+	.alert-type--resuelta { background: var(--success-bg); color: var(--success-ink); }
+	/* La incidencia resuelta permanece, atenuada, como registro. */
+	.notif-card--resuelta { opacity: 0.75; }
 
 	.notif-card__message {
 		font-size: var(--text-sm);

@@ -1156,24 +1156,12 @@
 	/* ── Responsive ──────────────────────────────────────────────────────────
 	   Al angostarse se ceden primero los códigos SAP (consultables en el
 	   detalle) y se conservan despacho, ruta y transporte. */
+	/* ── Pantallas medianas y pequeñas ────────────────────────────────────
+	   La tabla de 6 columnas sólo cabe cómoda en pantallas anchas (>1200px).
+	   Por debajo, cada fila pasa a ser una tarjeta: la etiqueta de columna
+	   entra en la tarjeta y los datos se apilan, en vez de esconder columnas
+	   (que es como se perdía la mayor parte del despacho). */
 	@media (max-width: 1200px) {
-		.dashboard { --card-cols: minmax(180px, 1.35fr) minmax(150px, 1.2fr) 0 minmax(200px, 1.5fr) minmax(180px, 1.35fr) 2.5rem; }
-		.cards-header > :nth-child(3),
-		.card-grid    > :nth-child(3) { display: none; }
-		.alerts-grid { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
-	}
-	@media (max-width: 960px) {
-		.dashboard { --card-cols: minmax(170px, 1.3fr) 0 0 minmax(190px, 1.5fr) minmax(170px, 1.3fr) 2.5rem; }
-		.cards-header > :nth-child(2),
-		.card-grid    > :nth-child(2) { display: none; }
-		.viajes-header { flex-wrap: wrap; }
-		.viajes-header__left { flex-wrap: wrap; }
-	}
-	/* ── Móvil ────────────────────────────────────────────────────────────
-	   Cada fila pasa a ser una tarjeta: en vez de esconder columnas (que es
-	   como se perdía la mayor parte del despacho), la etiqueta de columna
-	   entra en la tarjeta y los datos se apilan. */
-	@media (max-width: 700px) {
 		.cards-header { display: none; }
 
 		.card-grid {
@@ -1274,10 +1262,12 @@
 			padding: var(--space-5) var(--space-1) var(--space-2);
 		}
 
-		.alerts-grid { grid-template-columns: 1fr; gap: var(--space-4); }
+		.alerts-grid { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--space-4); }
+	}
 
-		/* La barra pasa a dos líneas en móvil: el ancla debe despejar más alto
-		   o el título de la sección queda debajo de ella. */
+	/* Sólo en móvil real: la barra de navegación pasa a dos líneas, así que el
+	   ancla debe despejar más alto o el título de la sección queda tapado. */
+	@media (max-width: 700px) {
 		.viajes,
 		.incidencias { scroll-margin-top: 148px; }
 	}
