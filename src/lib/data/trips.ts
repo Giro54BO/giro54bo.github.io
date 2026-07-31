@@ -357,7 +357,7 @@ export const trips: Trip[] = [
 		urgente: false,
 		coordenadas: { lat: -17.9698, lng: -67.1069 },
 		eventos: [
-			{ id: 'e1', timestamp: '29 jul, 12:40', tipo: 'sistema', titulo: 'En carga', descripcion: 'Todas las bahías de carga ocupadas.', ubicacion: 'Planta Oruro', geocerca: 'planta-oruro' },
+			{ id: 'e1', timestamp: '29 jul, 12:40', tipo: 'sistema', titulo: 'Alerta de demora', descripcion: 'El tiempo de espera en carga superó el promedio; todas las bahías ocupadas. Alerta enviada a coordinación.', ubicacion: 'Planta Oruro', geocerca: 'planta-oruro' },
 		],
 	},
 	{
