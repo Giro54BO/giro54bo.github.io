@@ -14,8 +14,9 @@
 	};
 </script>
 
-<span class="badge badge--{estado} badge--{size}" role="status">
+<span class="badge badge--{estado} badge--{size} tooltip-trigger" role="status" aria-label={STATE_LABELS[estado]}>
 	<span class="icon icon--sm" aria-hidden="true">{ICONS[estado]}</span>
+	<span class="tooltip-bubble">{STATE_LABELS[estado]}</span>
 	{STATE_LABELS[estado]}
 </span>
 

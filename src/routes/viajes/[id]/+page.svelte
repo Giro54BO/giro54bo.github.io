@@ -190,7 +190,38 @@
 	}
 
 	// Duración aproximada del viaje: la parte de tiempo de `distancia` ("… | 22 h 16 min").
-	const duracion = $derived(trip.distancia.split('|')[1]?.trim() ?? '—');
+	function leadTimeInDays(distancia: string): string {
+		const duration = distancia.split('|')[1] ?? '';
+		const hours = Number(duration.match(/(\d+)\s*h/)?.[1] ?? 0);
+		const minutes = Number(duration.match(/(\d+)\s*min/)?.[1] ?? 0);
+		const totalMinutes = hours * 60 + minutes;
+		if (!totalMinutes) return '—';
+
+		const days = Math.floor(totalMinutes / (24 * 60));
+		const remainingMinutes = totalMinutes % (24 * 60);
+		const remainingHours = Math.floor(remainingMinutes / 60);
+		const leftoverMinutes = remainingMinutes % 60;
+		const parts: string[] = [];
+
+		if (days) parts.push(`${days} ${days === 1 ? 'día' : 'días'}`);
+		if (remainingHours) parts.push(`${remainingHours} h`);
+		if (leftoverMinutes) parts.push(`${leftoverMinutes} min`);
+		return parts.join(' ');
+	}
+
+	const SEGMENT_LEAD_TIMES: Record<string, { origenFrontera?: string; fronteraDestino?: string }> = {
+		'BO - PDF - AREQUIPA': { origenFrontera: '18 h 00 min', fronteraDestino: '11 h 00 min' },
+		'BO - PDF - LA PAZ':    {},
+		'BO - EL ALTO - ILO':   { origenFrontera: '8 h 00 min', fronteraDestino: '5 h 00 min' },
+		'BO - ORURO - ARICA':   { origenFrontera: '7 h 00 min', fronteraDestino: '4 h 00 min' },
+	};
+
+	function formatSegmentLeadTime(duration?: string): string {
+		return duration ? leadTimeInDays(`0 km | ${duration}`) : 'No aplica';
+	}
+
+	const duracion = $derived(leadTimeInDays(trip.distancia));
+	const segmentLeadTimes = $derived(SEGMENT_LEAD_TIMES[trip.rutaNombre] ?? {});
 </script>
 
 <div class="detalle">
@@ -226,12 +257,32 @@
 		<span class="trip-summary__metric">
 			<button class="trip-summary__help" type="button" aria-label="Qué significa Lead time">
 				<span class="icon" aria-hidden="true">help_outline</span>
-				<span class="trip-summary__tooltip" role="tooltip">Tiempo que tarda la carga en completar el recorrido. Se calcula con la salida y llegada reales (ATD/ATA).</span>
+				<span class="trip-summary__tooltip" role="tooltip">Tiempo total promedio estimado desde el origen hasta el destino, considerando conducción, descansos y paradas.</span>
 			</button>
 			<span class="trip-summary__label">Lead time</span>
 			<strong>{duracion}</strong>
 		</span>
-		<span class="trip-summary__sep" aria-hidden="true">|</span>
+		{#if segmentLeadTimes.origenFrontera || segmentLeadTimes.fronteraDestino}
+			<span class="trip-summary__sep" aria-hidden="true">|</span>
+			<span class="trip-summary__metric">
+				<button class="trip-summary__help" type="button" aria-label="Qué significa Lead time Origen a Frontera">
+					<span class="icon" aria-hidden="true">help_outline</span>
+					<span class="trip-summary__tooltip" role="tooltip">Tiempo promedio estimado que tarda la unidad en llegar desde el origen hasta la frontera.</span>
+				</button>
+				<span class="trip-summary__label">Lead time Origen → Frontera</span>
+				<strong>{formatSegmentLeadTime(segmentLeadTimes.origenFrontera)}</strong>
+			</span>
+			<span class="trip-summary__sep" aria-hidden="true">|</span>
+			<span class="trip-summary__metric">
+				<button class="trip-summary__help" type="button" aria-label="Qué significa Lead time Frontera a Destino">
+					<span class="icon" aria-hidden="true">help_outline</span>
+					<span class="trip-summary__tooltip" role="tooltip">Tiempo promedio estimado desde la frontera hasta el destino final, considerando conducción, descansos y paradas.</span>
+				</button>
+				<span class="trip-summary__label">Lead time Frontera → Destino</span>
+				<strong>{formatSegmentLeadTime(segmentLeadTimes.fronteraDestino)}</strong>
+			</span>
+			<span class="trip-summary__sep" aria-hidden="true">|</span>
+		{/if}
 		{#if trip.gps}
 			<span class="trip-summary__metric">
 				<button class="trip-summary__help" type="button" aria-label="Qué significa ETA ideal de llegada">
@@ -318,15 +369,23 @@
 
 	<!-- ── Info: Transportadora / Conductor / Vehículo ── -->
 	<div class="info-strip">
-		<section class="info-group" aria-labelledby="ig-transportadora">
+		<section class="info-group info-group--transportadora" aria-labelledby="ig-transportadora">
 			<h2 class="info-group__title" id="ig-transportadora">
 				<span class="icon" aria-hidden="true">business_center</span>
 				Transportadora <span class="source">(SCL/SCP)</span>
 			</h2>
 			<div class="info-group__fields">
-				<div class="field field--wide">
-					<span class="field__label">Empresa / NIT <span class="source">(TraNombre · TraNit)</span></span>
-					<span class="field__value">{trip.transportista} / {trip.nit}</span>
+				<div class="field">
+					<span class="field__label">Código de cliente <span class="source">(cliCodigo)</span></span>
+					<span class="field__value">{trip.sap.cliCodigo}</span>
+				</div>
+				<div class="field">
+					<span class="field__label">Empresa <span class="source">(TraNombre)</span></span>
+					<span class="field__value">{trip.transportista}</span>
+				</div>
+				<div class="field">
+					<span class="field__label">NIT <span class="source">(TraNit)</span></span>
+					<span class="field__value">{trip.nit}</span>
 				</div>
 				<div class="field">
 					<span class="field__label">Contacto</span>
@@ -739,7 +798,7 @@
 					</h2>
 					{#if puedeReportar}
 						<a class="btn-nueva-inc" href="/incidencias/nueva?viaje={trip.id}">
-							Nueva incidencia
+							Registrar incidencia
 							<span class="icon" aria-hidden="true">add</span>
 						</a>
 					{:else}
@@ -749,7 +808,7 @@
 							disabled
 							title="El despacho ya llegó a destino; no se pueden registrar incidencias."
 						>
-							Nueva incidencia
+							Registrar incidencia
 							<span class="icon" aria-hidden="true">add</span>
 						</button>
 					{/if}
@@ -1159,7 +1218,7 @@
 	/* ── Info strip ── */
 	.info-strip {
 		display: grid;
-		grid-template-columns: 1fr 1.3fr 1fr;
+		grid-template-columns: 1.4fr 1fr 1fr;
 		border-bottom: 1px solid var(--border);
 	}
 	.info-group {
@@ -1183,6 +1242,11 @@
 	.info-group__fields {
 		display: flex;
 		gap: var(--space-4);
+	}
+	.info-group--transportadora .info-group__fields {
+		display: grid;
+		grid-template-columns: repeat(4, minmax(0, 1fr));
+		gap: var(--space-5);
 	}
 	.field {
 		display: flex;

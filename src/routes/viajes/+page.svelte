@@ -1,0 +1,194 @@
+<script lang="ts">
+  import DashFilters from '$lib/components/DashFilters.svelte';
+  import StatusChips from '$lib/components/StatusChips.svelte';
+  import FilterSectionHeader from '$lib/components/FilterSectionHeader.svelte';
+  import TripSearch from '$lib/components/TripSearch.svelte';
+  import { filtros, filtrarViajes } from '$lib/data/dash-filters.svelte';
+  import { trips, STATE_LABELS, type TripState } from '$lib/data/trips';
+
+  const dashTrips = $derived(filtrarViajes(trips, { includeSearch: true }));
+
+  const STATUS_COLORS: Partial<Record<TripState, { bg: string; ink: string }>> = {
+    'en-transito':     { bg: 'var(--status-en-transito-bg)',      ink: 'var(--status-en-transito-ink)'      },
+    'en-frontera':     { bg: 'var(--status-en-frontera-bg)',      ink: 'var(--status-en-frontera-ink)'      },
+    'incidencia':      { bg: 'var(--status-incidencia-bg)',       ink: 'var(--status-incidencia-ink)'       },
+    'en-carga':        { bg: 'var(--status-en-carga-bg)',         ink: 'var(--status-en-carga-ink)'         },
+    'en-descarga':     { bg: 'var(--status-en-descarga-bg)',      ink: 'var(--status-en-descarga-ink)'      },
+    'en-retorno':      { bg: 'var(--status-en-retorno-bg)',       ink: 'var(--status-en-retorno-ink)'       },
+  };
+
+  function etaLine(trip: { distancia: string; gps: boolean }) {
+    const [km, dur] = trip.distancia.split('|').map(s => s.trim());
+    if (!dur) return trip.distancia;
+    return `${trip.gps ? 'ETA' : 'Lead time'} ${dur} | ${km}`;
+  }
+
+  function estaDentroDeBolivia(trip: { ultimaUbicacion: string; geocerca: { actual?: string } }) {
+    const ubicacion = `${trip.ultimaUbicacion} ${trip.geocerca.actual ?? ''}`.toLowerCase();
+    if (trip.geocerca.actual?.startsWith('frontera-')) return false;
+    if (/(perú|peru|chile|arica|ilo|arequipa|putre|puerto-|cd-)/.test(ubicacion)) return false;
+    return /(bolivia|cochabamba|patacamaya|caracollo|oruro|turco|warnes|el alto|la paz)/.test(ubicacion);
+  }
+
+  const STATE_ICONS: Record<TripState, string> = {
+    'en-transito':     'local_shipping',
+    'en-frontera':     'flag',
+    'incidencia':      'report',
+    'en-carga':        'forklift',
+    'en-descarga':     'download',
+    'en-retorno':      'undo',
+  };
+
+  const filteredTrips = $derived(
+    dashTrips.slice().sort((a, b) => {
+      const priority: Record<TripState, number> = { 'en-carga': 0, 'en-transito': 1, 'en-frontera': 2, 'en-descarga': 3, incidencia: 4, 'en-retorno': 5 };
+      return priority[a.estado] - priority[b.estado];
+    })
+  );
+
+  const leyenda = $derived.by(() => {
+    const vistas = new Set<string>();
+    const orden: TripState[] = [];
+    for (const t of filteredTrips) {
+      const label = STATE_LABELS[t.estado];
+      if (!vistas.has(label)) { vistas.add(label); orden.push(t.estado); }
+    }
+    return orden;
+  });
+
+  function desglose(rutaNombre: string): string[] { return rutaNombre.split(' - ').map(s => s.trim()); }
+</script>
+
+<div class="viajes" id="main-content">
+  <div class="viajes-header">
+    <h2 class="section-heading">
+      <span class="icon section-heading__icon" aria-hidden="true">route</span>
+      Viajes
+    </h2>
+  </div>
+
+  <div class="viajes-search-row">
+    <TripSearch />
+    <button class="btn-buscar" type="button">BUSCAR</button>
+  </div>
+
+  <div class="filters-divider" aria-hidden="true"></div>
+
+  <section class="filter-section" aria-label="Filtros de Viajes">
+    <FilterSectionHeader />
+    <DashFilters />
+    <StatusChips />
+  </section>
+
+  <div class="cards-container" role="region" aria-label="Tabla de despachos activos">
+    <div class="cards-header" aria-hidden="true">
+      <span>Correlativo único / Fecha de despacho</span>
+      <span>Nº de entrega SAP / Código de cliente SAP</span>
+      <span>Nº de pedido SAP / Nº de transporte SAP</span>
+      <span>Código de ruta / Desglose de la ruta / Tiempo estimado de llegada</span>
+      <span>Carnet chofer / Nombre del proveedor de transporte / Placa</span>
+      <span></span>
+    </div>
+
+    <div class="cards-list">
+      {#each filteredTrips as trip, i (trip.id)}
+        {@const sc = STATUS_COLORS[trip.estado]}
+        {@const ruta = desglose(trip.rutaNombre)}
+        {@const dentroDeBolivia = estaDentroDeBolivia(trip)}
+        <a class="trip-card" href={`/viajes/${trip.id}`} style="animation-delay:{i * 55}ms" aria-label={`Despacho ${trip.id}, vehículo ${trip.unidad}, ${STATE_LABELS[trip.estado]}. Ver detalle.`}>
+          <div class="card-grid">
+            <div class="card-cell">
+              <span class="cell-label">Correlativo único / Fecha de despacho</span>
+              <div class="status-circle tooltip-trigger" style="background:{sc?.bg}; color:{sc?.ink}" aria-label={STATE_LABELS[trip.estado]}>
+                <span class="icon icon--sm" aria-hidden="true">{STATE_ICONS[trip.estado]}</span>
+                <span class="tooltip-bubble">{STATE_LABELS[trip.estado]}</span>
+              </div>
+              <div class="cell-stack">
+                <span class="cell-primary">
+                  {trip.id}
+                  {#if trip.urgente}
+                    <span class="icon icon--sm urgent-icon" aria-label="Urgente">priority_high</span>
+                  {/if}
+                </span>
+                <span class="cell-secondary">{trip.fechaDocumentada}</span>
+              </div>
+            </div>
+
+            <div class="cell-stack">
+              <span class="cell-label">Nº de entrega SAP / Código de cliente SAP</span>
+              <span class="cell-secondary">{trip.sap.salidaMercancia}</span>
+              <span class="cell-primary">{trip.sap.cliCodigo}</span>
+            </div>
+
+            <div class="cell-stack">
+              <span class="cell-label">Nº de pedido SAP / Nº de transporte SAP</span>
+              <span class="cell-secondary">{trip.sap.pedido}</span>
+              <span class="cell-primary">{trip.sap.numeroTransporte}</span>
+            </div>
+
+            <div class="cell-stack">
+              <span class="cell-label">Código de ruta / Desglose de la ruta / Tiempo estimado de llegada</span>
+              <span class="cell-secondary">{trip.rutaCodigo}</span>
+              <span class="route-line">
+                {#each ruta as segmento, si}
+                  {#if si > 0}<span class="icon icon--sm route-arrow" aria-hidden="true">arrow_forward</span>{/if}
+                  <span class="route-seg" class:route-seg--dest={si === ruta.length - 1}>{segmento}</span>
+                {/each}
+              </span>
+              <span class="cell-secondary">{etaLine(trip)}</span>
+              <span class="route-location">
+                <button class="route-location__help tooltip-trigger" type="button" aria-label={dentroDeBolivia ? 'Dentro de Bolivia' : 'Fuera de Bolivia'}>
+                  <span class="icon" aria-hidden="true">help_outline</span>
+                  <span class="tooltip-bubble">{dentroDeBolivia ? 'Dentro de Bolivia' : 'Fuera de Bolivia'}</span>
+                </button>
+                <span>Tránsito</span>
+                <strong>{dentroDeBolivia ? 'Bolivia' : 'Internacional'}</strong>
+              </span>
+            </div>
+
+            <div class="cell-stack">
+              <span class="cell-label">Carnet chofer / Nombre del proveedor de transporte / Placa</span>
+              <span class="cell-line">
+                <span class="icon icon--sm cell-line__icon" aria-hidden="true">id_card</span>
+                <span class="cell-primary">{trip.conductor}</span>
+              </span>
+              <span class="cell-secondary">{trip.transportista}</span>
+              <span class="cell-line">
+                <span class="icon icon--sm cell-line__icon" aria-hidden="true">local_shipping</span>
+                <span class="cell-secondary cell-secondary--dark">{trip.unidad}</span>
+                {#if !trip.gps}
+                  <span class="nogps-tag" title="Vehículo sin GPS Tag: sin posición ni ETA"><span class="icon icon--sm" aria-hidden="true">gps_off</span>Sin GPS</span>
+                {/if}
+              </span>
+            </div>
+
+            <div class="card-action"><span class="card-action__text">Ver más</span><span class="icon icon--sm" aria-hidden="true">arrow_forward_ios</span></div>
+          </div>
+        </a>
+      {:else}
+        <div class="trip-empty">
+          <div class="empty-state">
+            <span class="icon icon--xl" aria-hidden="true">manage_search</span>
+            <p>No se encontraron despachos con los filtros actuales.</p>
+            <button class="btn-outline btn-outline--sm" onclick={() => { filtros.busqueda = ''; /* limpiar? */ }}>
+              Limpiar filtros
+            </button>
+          </div>
+        </div>
+      {/each}
+    </div>
+
+    {#if leyenda.length > 0}
+      <ul class="cards-legend" aria-label="Leyenda de estados">
+        {#each leyenda as estado (estado)}
+          {@const lc = STATUS_COLORS[estado]}
+          <li class="legend-item"><span class="status-circle status-circle--sm" style="background:{lc?.bg}; color:{lc?.ink}"><span class="icon icon--sm" aria-hidden="true">{STATE_ICONS[estado]}</span></span>{STATE_LABELS[estado]}</li>
+        {/each}
+      </ul>
+    {/if}
+  </div>
+</div>
+
+<style>
+  /* small page overrides */
+</style>

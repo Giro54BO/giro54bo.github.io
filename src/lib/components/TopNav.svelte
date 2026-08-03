@@ -1,55 +1,21 @@
 <script lang="ts">
 	import { page } from '$app/stores';
-	import { onMount } from 'svelte';
 	import logo from '$lib/assets/iasa-logo.png';
 	import { alertas } from '$lib/data/trips';
 
 	const alertCount = alertas.length;
 
-	// En el dashboard, las pestañas desplazan a su sección (anclas en la misma
-	// página); fuera del dashboard, navegan a ella y luego desplazan.
 	const navItems: { href: string; label: string; icon: string; section: string; badge?: number }[] = [
-		{ href: '/#main-content', label: 'Dashboard',   icon: 'grid_view', section: 'dashboard' },
-		{ href: '/#viajes',       label: 'Viajes',      icon: 'route',      section: 'viajes' },
-		{ href: '/#incidencias',  label: 'Incidencias', icon: 'warning',    section: 'incidencias', badge: alertCount },
+		{ href: '/dashboard', label: 'Dashboard',   icon: 'grid_view', section: 'dashboard' },
+		{ href: '/viajes',    label: 'Viajes',      icon: 'route',      section: 'viajes' },
+		{ href: '/incidencias', label: 'Incidencias', icon: 'warning',  section: 'incidencias', badge: alertCount },
 	];
 
-	// Sección activa según el desplazamiento (comportamiento de pestañas).
-	let activeSection = $state('dashboard');
-	const onDashboard = $derived($page.route.id === '/');
-
-	function isActive(section: string) {
-		return onDashboard && activeSection === section;
-	}
-
-	onMount(() => {
-		let ticking = false;
-		function compute() {
-			ticking = false;
-			const doc = document.documentElement;
-			// Al final de la página, la última sección queda activa aunque su
-			// borde superior no alcance la línea de detección.
-			if (window.innerHeight + window.scrollY >= doc.scrollHeight - 4) {
-				activeSection = 'incidencias';
-				return;
-			}
-			const line = window.scrollY + 150; // punto de detección bajo la barra
-			let current = 'dashboard';
-			for (const id of ['viajes', 'incidencias']) {
-				const el = document.getElementById(id);
-				if (el && el.getBoundingClientRect().top + window.scrollY <= line) current = id;
-			}
-			activeSection = current;
-		}
-		function onScroll() { if (!ticking) { ticking = true; requestAnimationFrame(compute); } }
-		compute();
-		window.addEventListener('scroll', onScroll, { passive: true });
-		window.addEventListener('resize', onScroll, { passive: true });
-		return () => {
-			window.removeEventListener('scroll', onScroll);
-			window.removeEventListener('resize', onScroll);
-		};
-	});
+	const activeSection = $derived(
+		$page.route.id?.startsWith('/dashboard') ? 'dashboard' :
+		$page.route.id?.startsWith('/viajes') ? 'viajes' :
+		$page.route.id?.startsWith('/incidencias') ? 'incidencias' : ''
+	);
 </script>
 
 <header class="topnav">
@@ -59,7 +25,7 @@
 
 	<nav class="topnav__pill" aria-label="Navegación principal">
 		{#each navItems as item}
-					{@const active = isActive(item.section)}
+				{@const active = activeSection === item.section}
 			<a
 				href={item.href}
 				class="topnav__link"

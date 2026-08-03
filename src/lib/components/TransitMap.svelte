@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { goto } from '$app/navigation';
 	import maplibregl from 'maplibre-gl';
 	import 'maplibre-gl/dist/maplibre-gl.css';
 	import { trips as allTrips, type Trip } from '$lib/data/trips';
@@ -19,6 +20,24 @@
 	// aceleración por hardware desactivada o redes que bloquean el CDN, no puede
 	// dibujarse. En ese caso se muestra un resumen de rutas en vez de un vacío.
 	let mapFailed = $state(false);
+
+	function tripMarkerEl(trip: Trip, color: string): HTMLElement {
+		const el = truckMarkerEl(trip.unidad, color);
+		el.classList.add('tm-truck--clickable');
+		el.setAttribute('role', 'link');
+		el.setAttribute('tabindex', '0');
+		el.setAttribute('aria-label', `Ver detalle del viaje ${trip.id}`);
+
+		const openTrip = () => goto(`/viajes/${trip.id}`);
+		el.addEventListener('click', openTrip);
+		el.addEventListener('keydown', (event) => {
+			if (event.key === 'Enter' || event.key === ' ') {
+				event.preventDefault();
+				openTrip();
+			}
+		});
+		return el;
+	}
 
 	function webglDisponible(): boolean {
 		try {
@@ -144,7 +163,7 @@
 			const stacked = coordCount.get(key) ?? 0;
 			coordCount.set(key, stacked + 1);
 			markers.push(
-				new maplibregl.Marker({ element: truckMarkerEl(r.trip.unidad, r.color), offset: [0, stacked * 30] })
+				new maplibregl.Marker({ element: tripMarkerEl(r.trip, r.color), offset: [0, stacked * 30] })
 					.setLngLat([r.trip.coordenadas.lng, r.trip.coordenadas.lat])
 					.addTo(map)
 			);

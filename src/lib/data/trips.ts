@@ -132,11 +132,11 @@ export const STATE_LABELS: Record<TripState, string> = {
 	'en-transito':     'En tránsito',
 	'en-frontera':     'En frontera',
 	'en-descarga':     'En descarga',
-	'en-retorno':      'En retorno',
-	'incidencia':      'Detenido por incidencia',
+	'incidencia':      'Incidencia',
+	'en-retorno':      'Disponible',
 };
 
-export const trips: Trip[] = [
+const rawTrips: Trip[] = [
 	{
 		id: 'PEWDSP206746',
 		unidad: '3480IZA',
@@ -824,6 +824,56 @@ export const trips: Trip[] = [
 		],
 	},
 ];
+
+// Keep the demo's operational dates aligned with the current week without
+// changing the relative timing between trips, ETAs, geofences, and events.
+function shiftDemoDates(value: unknown): unknown {
+	if (typeof value === 'string') {
+		const shift = (day: number, month: number, year: number) => {
+			const date = new Date(year, month, day + 7);
+			return { day: date.getDate(), month: date.getMonth(), year: date.getFullYear() };
+		};
+
+		return value
+			.replace(/(\d{1,2})\/(Jul|07)\/(2026)/gi, (_, day, month, year) => {
+				const shifted = shift(Number(day), 6, Number(year));
+				return `${String(shifted.day).padStart(2, '0')}/${shifted.month === 7 ? 'Ago' : 'Jul'}/${shifted.year}`;
+			})
+			.replace(/(\d{1,2})\/(0?7)\/(2026)/g, (_, day, month, year) => {
+				const shifted = shift(Number(day), 6, Number(year));
+				return `${String(shifted.day).padStart(2, '0')}/${String(shifted.month + 1).padStart(2, '0')}/${shifted.year}`;
+			})
+			.replace(/(\d{1,2})\s+(Jul\.?)((?:\s+2026)?)/gi, (_, day, month, yearSuffix) => {
+				const shifted = shift(Number(day), 6, 2026);
+				const monthLabel = shifted.month === 7 ? 'Ago' : 'Jul';
+				const punctuation = month.endsWith('.') ? '.' : '';
+				return `${shifted.day} ${monthLabel}${punctuation}${yearSuffix}`;
+			});
+	}
+	if (Array.isArray(value)) return value.map(shiftDemoDates);
+	if (value && typeof value === 'object') {
+		return Object.fromEntries(Object.entries(value).map(([key, entry]) => [key, shiftDemoDates(entry)]));
+	}
+	return value;
+}
+
+const ROUTE_TIMINGS: Record<string, { duration: string; range: string }> = {
+	'BO - PDF - AREQUIPA': { duration: '29 h 00 min', range: '29 a 34 hrs.' },
+	'BO - PDF - LA PAZ':    { duration: '21 h 00 min', range: '20 a 24 hrs.' },
+	'BO - EL ALTO - ILO':   { duration: '13 h 00 min', range: '13 a 16 hrs.' },
+	'BO - ORURO - ARICA':   { duration: '11 h 00 min', range: '10 a 13 hrs.' },
+};
+
+function applyRealisticRouteTiming(trip: Trip): Trip {
+	const timing = ROUTE_TIMINGS[trip.rutaNombre];
+	if (!timing) return trip;
+	const distance = trip.distancia.split('|')[0].trim();
+	return { ...trip, distancia: `${distance} | ${timing.duration}`, etaRecorrido: timing.range };
+}
+
+export const trips: Trip[] = rawTrips
+	.map((trip) => shiftDemoDates(trip) as Trip)
+	.map(applyRealisticRouteTiming);
 
 export const alertas: Alerta[] = [
 	{

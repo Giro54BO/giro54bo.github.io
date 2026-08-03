@@ -7,7 +7,7 @@
 	const activeTrips = trips.filter(t => t.estado !== 'en-retorno');
 	const preselectedId = $page.url.searchParams.get('viaje') ?? '';
 
-	type IncidentTipo = 'accidente' | 'falla-mecanica' | 'bloqueo' | 'problema-documental' | 'demora-frontera' | 'saturacion-descarga';
+	type IncidentTipo = 'accidente' | 'falla-mecanica' | 'bloqueo' | 'problema-documental' | 'demora-frontera' | 'saturacion-descarga' | 'observado-por-calidad';
 
 	interface TipoOption {
 		value: IncidentTipo;
@@ -24,6 +24,7 @@
 		{ value: 'falla-mecanica',      label: 'Falla mecánica',         icon: 'build',             global: false, descripcion: 'Avería del vehículo que impide o limita su operación normal' },
 		{ value: 'bloqueo',             label: 'Bloqueo',                icon: 'block',             global: true,  descripcion: 'Carretera bloqueada por manifestaciones, derrumbes u otros obstáculos' },
 		{ value: 'problema-documental', label: 'Problema documental',    icon: 'news',              global: false, descripcion: 'Documentos incompletos, vencidos o retenidos en aduana o control' },
+		{ value: 'observado-por-calidad', label: 'Observado por calidad', icon: 'thumb_down',       global: false, descripcion: 'Carga observada por personal aduanero' },
 		{ value: 'demora-frontera',     label: 'Demora en frontera',     icon: 'schedule',          global: true,  descripcion: 'Tiempo excesivo en trámites aduaneros o filas en paso fronterizo' },
 		{ value: 'saturacion-descarga', label: 'Saturación de descarga', icon: 'hand_gesture_off',  global: true,  descripcion: 'Cola o espera prolongada en el punto de descarga por saturación' },
 	];

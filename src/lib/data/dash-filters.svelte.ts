@@ -4,7 +4,8 @@
 // página se vuelve a montar y unos `$state` locales se reiniciarían, dejando
 // el dashboard como si nunca se hubiera filtrado nada.
 import { toISODate } from './units';
-import type { TripState } from './trips';
+import { parseFechaDoc } from './units';
+import { STATE_LABELS, type Trip, type TripState } from './trips';
 
 export type PeriodoKey =
 	| 'esta-semana' | 'este-mes' | 'semana-pasada' | 'mes-pasado'
@@ -74,8 +75,8 @@ export const filtros = $state({
 	producto:      '',
 	cliente:       '',
 	transportista: '',
-	origen:        '',
-	destino:       '',
+	origen:        [] as string[],
+	destino:       [] as string[],
 	fecha:         PERIODO_POR_DEFECTO as PeriodoKey,
 	// Sólo se usan con el periodo 'rango'; arrancan en la semana en curso para
 	// que al elegir "Rango" el selector ya venga con fechas válidas.
@@ -83,14 +84,56 @@ export const filtros = $state({
 	rangoHasta:    semanaActual.hasta,
 });
 
+/**
+ * Applies the shared dashboard filters to any trip collection.
+ * Keeping this here prevents Dashboard and Viajes from drifting apart when a
+ * new filter is added or when a period preset is selected.
+ */
+export function filtrarViajes(items: Trip[], options: { includeSearch?: boolean; includeStatus?: boolean } = {}): Trip[] {
+	const periodo = rangoDePeriodo(filtros.fecha);
+	const desde = periodo?.desde ?? filtros.rangoDesde;
+	const hasta = periodo?.hasta ?? filtros.rangoHasta;
+	const query = filtros.busqueda.trim().toLowerCase();
+
+	return items.filter((trip) => {
+		if (options.includeStatus !== false && filtros.estado && trip.estado !== filtros.estado) return false;
+		if (filtros.producto && trip.carga !== filtros.producto) return false;
+		if (filtros.cliente && trip.sap.cliCodigo !== filtros.cliente) return false;
+		if (filtros.transportista && trip.transportista !== filtros.transportista) return false;
+		if (filtros.origen.length && !filtros.origen.includes(trip.origen)) return false;
+		if (filtros.destino.length && !filtros.destino.includes(trip.destino)) return false;
+
+		if (desde || hasta) {
+			const fecha = parseFechaDoc(trip.fechaDocumentada);
+			if (!fecha) return false;
+			if (desde && fecha < new Date(`${desde}T00:00:00`)) return false;
+			if (hasta && fecha > new Date(`${hasta}T23:59:59`)) return false;
+		}
+
+		if (options.includeSearch && query) {
+			const searchable = [
+				trip.id, trip.conductor, trip.transportista, trip.unidad,
+				trip.rutaCodigo, trip.rutaNombre, trip.origen, trip.destino,
+				trip.carga, STATE_LABELS[trip.estado], trip.fechaDocumentada,
+				trip.sap.salidaMercancia, trip.sap.cliCodigo, trip.sap.pedido,
+				trip.sap.numeroTransporte, trip.sap.cenCodigo,
+			];
+			if (!searchable.some((value) => value.toLowerCase().includes(query))) return false;
+		}
+
+		return true;
+	});
+}
+
 export function limpiarFiltros() {
 	const semana = rangoDePeriodo(PERIODO_POR_DEFECTO)!;
 	filtros.estado = null;
+	filtros.busqueda = '';
 	filtros.producto = '';
 	filtros.cliente = '';
 	filtros.transportista = '';
-	filtros.origen = '';
-	filtros.destino = '';
+	filtros.origen = [];
+	filtros.destino = [];
 	filtros.fecha = PERIODO_POR_DEFECTO;
 	filtros.rangoDesde = semana.desde;
 	filtros.rangoHasta = semana.hasta;
