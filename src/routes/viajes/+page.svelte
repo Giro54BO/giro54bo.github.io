@@ -61,7 +61,6 @@
     <div class="filter-page-header__controls">
       <div class="viajes-search-row">
         <TripSearch />
-        <button class="btn-buscar" type="button">BUSCAR</button>
       </div>
       <button class="filters-toggle" type="button" aria-expanded={filtersOpen} aria-controls="viajes-filters" onclick={() => filtersOpen = !filtersOpen}>
         <span>FILTROS</span>

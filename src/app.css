@@ -42,7 +42,7 @@
 	--green-400: oklch(0.80 0.17 130);
 	--green-100: oklch(0.94 0.06 130);
 	--green-50:  oklch(0.97 0.03 130);
-	--green-normal: #9fd500;            /* Figma green/normal — botón BUSCAR */
+	--green-normal: #9fd500;            /* Figma green/normal — primary action */
 
 	/* ── Validación (Figma) ── */
 	--error-bg:   #ffebee;
@@ -390,7 +390,6 @@ body {
 .viajes-search-row { display: flex; align-items: center; gap: var(--space-4); width: 100%; }
 .trip-search { position: relative; flex: 1 1 auto; min-width: 0; }
 .viajes-search-row .search-pill { width: 100%; height: 43px; padding-inline: 25px; border-color: var(--blue-light-active); border-radius: var(--radius-full); }
-.viajes-search-row .btn-buscar { flex: 0 0 134px; }
 .trip-search__menu {
 	position: absolute;
 	z-index: var(--z-dropdown);
@@ -467,10 +466,9 @@ body {
 .multi-select-empty { padding: var(--space-4); color: var(--grey-muted); font-size: var(--text-sm); }
 .date-filter-menu { min-width: 100%; margin-top: 4px; }
 
-.btn-outline, .btn-buscar { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); height: 43px; border-radius: var(--radius-lg); font: 700 var(--text-sm) var(--font-body); white-space: nowrap; }
+.btn-outline { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); height: 43px; border-radius: var(--radius-lg); font: 700 var(--text-sm) var(--font-body); white-space: nowrap; }
 .btn-outline { min-width: 260px; padding: 0 var(--space-4); border: 1.5px solid var(--blue-dark); color: var(--blue-dark); }
 .btn-outline:hover { background: var(--teal-50); }
-.btn-buscar { width: 134px; background: var(--green-normal); color: var(--blue-dark); }
 
 .filter-bar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
 .filter-chip { display: inline-flex; align-items: center; gap: var(--space-2); min-height: 44px; padding: 0 var(--space-3); border: 1px solid var(--border-2); border-radius: var(--radius-full); color: var(--grey-normal); font: 600 var(--text-sm) var(--font-body); }
@@ -489,10 +487,11 @@ body {
 .search-pill__clear .icon { display: inline-grid; place-items: center; width: 24px; height: 24px; padding: 0; border-radius: 50%; background: var(--blue-dark); font-size: 16px; line-height: 1; }
 
 .cards-container { position: relative; font-variant-numeric: lining-nums tabular-nums; font-feature-settings: 'lnum' 1, 'tnum' 1; }
+.viajes .cards-container { margin-top: var(--space-6); }
 .cards-header { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)) 24px; gap: 80px; padding: 0 40px var(--space-2); color: var(--grey-muted); font-size: var(--text-xs); font-weight: 700; letter-spacing: .045em; line-height: 1.35; text-transform: uppercase; text-wrap: balance; }
 .cards-list { display: flex; flex-direction: column; gap: var(--space-2); }
-.trip-card { display: block; width: 100%; background: var(--surface); border: 1px solid var(--grey-light); border-radius: var(--radius-lg); transition: transform var(--duration-fast), box-shadow var(--duration-fast), border-color var(--duration-fast); }
-.trip-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-sm); border-color: var(--border-2); }
+.trip-card { display: block; width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: none; transition: transform var(--duration-fast), border-color var(--duration-fast); }
+.trip-card:hover { transform: translateY(-2px); border-color: var(--border-2); }
 .card-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)) 24px; gap: 80px; align-items: center; padding: 16px 40px; min-height: 117px; }
 .card-cell, .cell-line { display: flex; align-items: center; gap: var(--space-3); min-width: 0; }
 .cell-stack { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
@@ -575,8 +574,7 @@ body {
 @media (pointer: coarse) {
 	.dash-select,
 	.filters-toggle,
-	.btn-outline,
-	.btn-buscar { min-height: 44px; height: 44px; }
+	.btn-outline { min-height: 44px; height: 44px; }
 	.status-chips .filter-chip { min-height: 44px; }
 	.topnav__link,
 	.topnav__user { min-height: 44px; }
@@ -589,7 +587,7 @@ body {
 	.filters-toggle { position: static; width: 100%; }
 	.viajes-header__left { width: 100%; flex-direction: column; align-items: stretch; gap: var(--space-3); }
 	.search-pill { width: 100%; }
-	.btn-buscar, .btn-outline { width: 100%; min-width: 0; }
+	.btn-outline { width: 100%; min-width: 0; }
 	.dash-filters { flex-wrap: nowrap; overflow-x: auto; margin-inline: calc(var(--space-4) * -1); padding: 0 var(--space-4) var(--space-2); }
 	.dash-filter { flex: 0 0 auto; width: 200px; }
 	.viajes .dash-filter:nth-child(n),
@@ -597,7 +595,6 @@ body {
 	.status-chips { justify-content: flex-start; overflow-x: auto; padding-bottom: var(--space-2); }
 	.viajes-search-row { align-items: stretch; flex-direction: column; }
 	.viajes-search-row .search-pill { flex: none; width: 100%; }
-	.viajes-search-row .btn-buscar { flex: none; width: 100%; height: 43px; min-height: 43px; }
 	.alerts-grid { grid-template-columns: 1fr; gap: var(--space-4); }
 }
 

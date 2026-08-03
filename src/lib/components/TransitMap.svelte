@@ -375,6 +375,7 @@
 	.map-card {
 		position: relative;
 		border-radius: 14px;
+		border: 1px solid var(--border);
 		background: var(--surface-2);
 		overflow: hidden;
 		height: 580px;
@@ -390,6 +391,7 @@
 		width: 100vw;
 		height: 100vh;
 		border-radius: 0;
+		border: 0;
 	}
 	.map-card--fullscreen .map-el { height: 100vh; }
 

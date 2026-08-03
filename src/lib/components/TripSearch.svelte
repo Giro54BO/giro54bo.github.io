@@ -29,7 +29,7 @@
 			if (!focused && !filtros.busqueda.trim()) {
 				placeholderIndex = (placeholderIndex + 1) % SEARCH_PLACEHOLDERS.length;
 			}
-		}, 3200);
+		}, 2400);
 
 		return () => window.clearInterval(rotation);
 	});

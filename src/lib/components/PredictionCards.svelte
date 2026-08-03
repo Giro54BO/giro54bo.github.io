@@ -197,9 +197,10 @@
 		flex-direction: column;
 		gap: var(--space-3);
 		background: var(--surface);
+		border: 1px solid var(--border);
 		border-radius: 20px;
 		padding: var(--space-4) var(--space-5);
-		box-shadow: 0 1px 1.5px rgba(7, 20, 23, 0.08);
+		box-shadow: none;
 	}
 
 	.pred-card__top {
