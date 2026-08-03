@@ -1,6 +1,7 @@
 <script lang="ts">
   import TransitMap from '$lib/components/TransitMap.svelte';
   import PredictionCards from '$lib/components/PredictionCards.svelte';
+  import SearchEmptyState from '$lib/components/SearchEmptyState.svelte';
   import DashFilters from '$lib/components/DashFilters.svelte';
   import StatusChips from '$lib/components/StatusChips.svelte';
   import FilterSectionHeader from '$lib/components/FilterSectionHeader.svelte';
@@ -42,12 +43,16 @@
     </section>
   {/if}
 
-  <!-- Map and prediction -->
-  {#key mapKey}
-    <TransitMap trips={filteredTrips} />
-  {/key}
+  {#if filteredTrips.length === 0}
+    <SearchEmptyState onOpenFilters={() => { filtersOpen = true; }} onClearSearch={() => { filtros.busqueda = ''; }} />
+  {:else}
+    <!-- Map and prediction -->
+    {#key mapKey}
+      <TransitMap trips={filteredTrips} />
+    {/key}
 
-  <PredictionCards trips={filteredTrips} />
+    <PredictionCards trips={filteredTrips} />
+  {/if}
 
 </div>
 

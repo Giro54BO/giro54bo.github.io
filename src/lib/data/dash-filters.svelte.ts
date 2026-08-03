@@ -84,6 +84,11 @@ export const filtros = $state({
 	rangoHasta:    semanaActual.hasta,
 });
 
+/** Makes search tolerant of accents and surrounding whitespace. */
+export function normalizarBusqueda(value: string): string {
+	return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
+}
+
 /**
  * Applies the shared dashboard filters to any trip collection.
  * Keeping this here prevents Dashboard and Viajes from drifting apart when a
@@ -93,7 +98,7 @@ export function filtrarViajes(items: Trip[], options: { includeSearch?: boolean;
 	const periodo = rangoDePeriodo(filtros.fecha);
 	const desde = periodo?.desde ?? filtros.rangoDesde;
 	const hasta = periodo?.hasta ?? filtros.rangoHasta;
-	const query = filtros.busqueda.trim().toLowerCase();
+	const query = normalizarBusqueda(filtros.busqueda);
 
 	return items.filter((trip) => {
 		if (options.includeStatus !== false && filtros.estado && trip.estado !== filtros.estado) return false;
@@ -118,7 +123,7 @@ export function filtrarViajes(items: Trip[], options: { includeSearch?: boolean;
 				trip.sap.salidaMercancia, trip.sap.cliCodigo, trip.sap.pedido,
 				trip.sap.numeroTransporte, trip.sap.cenCodigo,
 			];
-			if (!searchable.some((value) => value.toLowerCase().includes(query))) return false;
+			if (!searchable.some((value) => normalizarBusqueda(value).includes(query))) return false;
 		}
 
 		return true;

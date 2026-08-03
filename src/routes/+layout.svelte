@@ -24,6 +24,9 @@
 	<main class="shell__main">
 		{@render children()}
 	</main>
+	<footer class="shell__footer">
+		© IASA | Todos los derechos reservados | Diseñado por Giro54
+	</footer>
 </div>
 
 <style>
@@ -54,6 +57,14 @@
 		min-width: 0;
 		display: flex;
 		flex-direction: column;
+	}
+
+	.shell__footer {
+		flex-shrink: 0;
+		padding: 30px 0;
+		color: var(--grey-muted);
+		font-size: var(--text-sm);
+		text-align: center;
 	}
 
 	@media (max-width: 700px) {

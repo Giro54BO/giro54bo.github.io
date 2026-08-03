@@ -3,6 +3,7 @@
   import StatusChips from '$lib/components/StatusChips.svelte';
   import FilterSectionHeader from '$lib/components/FilterSectionHeader.svelte';
   import TripSearch from '$lib/components/TripSearch.svelte';
+  import SearchEmptyState from '$lib/components/SearchEmptyState.svelte';
   import { filtros, filtrarViajes } from '$lib/data/dash-filters.svelte';
   import { trips, STATE_ICONS, STATE_LABELS, type TripState } from '$lib/data/trips';
 
@@ -53,10 +54,10 @@
 
 <div class="viajes" id="main-content">
   <div class="viajes-header filter-page-header">
-    <h2 class="section-heading">
+    <h1 class="section-heading">
       <span class="icon section-heading__icon" aria-hidden="true">route</span>
       Viajes
-    </h2>
+    </h1>
     <div class="filter-page-header__controls">
       <div class="viajes-search-row">
         <TripSearch />
@@ -135,10 +136,10 @@
               </span>
               <span class="cell-secondary">{etaLine(trip)}</span>
               <span class="route-location">
-                <button class="route-location__help tooltip-trigger" type="button" aria-label={dentroDeBolivia ? 'Dentro de Bolivia' : 'Fuera de Bolivia'}>
+                <span class="route-location__help tooltip-trigger" role="img" aria-label={dentroDeBolivia ? 'Dentro de Bolivia' : 'Fuera de Bolivia'}>
                   <span class="icon" aria-hidden="true">help_outline</span>
                   <span class="tooltip-bubble">{dentroDeBolivia ? 'Dentro de Bolivia' : 'Fuera de Bolivia'}</span>
-                </button>
+                </span>
                 <span>Tránsito</span>
                 <strong>{dentroDeBolivia ? 'Bolivia' : 'Internacional'}</strong>
               </span>
@@ -164,15 +165,7 @@
           </div>
         </a>
       {:else}
-        <div class="trip-empty">
-          <div class="empty-state">
-            <span class="icon icon--xl" aria-hidden="true">manage_search</span>
-            <p>No se encontraron despachos con los filtros actuales.</p>
-            <button class="btn-outline btn-outline--sm" onclick={() => { filtros.busqueda = ''; /* limpiar? */ }}>
-              Limpiar filtros
-            </button>
-          </div>
-        </div>
+        <SearchEmptyState onOpenFilters={() => { filtersOpen = true; }} onClearSearch={() => { filtros.busqueda = ''; }} />
       {/each}
     </div>
 

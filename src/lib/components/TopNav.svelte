@@ -63,9 +63,6 @@
 		flex-shrink: 0;
 	}
 
-	.topnav__logo {
-		padding-top: var(--space-4);
-	}
 	.topnav__logo img {
 		height: 45px;
 		width: auto;
@@ -81,9 +78,7 @@
 		gap: var(--space-4);
 		height: 45px;
 		padding: 0 var(--space-2);
-		background: var(--surface);
 		border-radius: var(--radius-full);
-		box-shadow: 0 1px 2px oklch(0 0 0 / 0.05);
 	}
 
 	.topnav__link {

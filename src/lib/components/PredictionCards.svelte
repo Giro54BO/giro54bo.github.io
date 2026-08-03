@@ -183,7 +183,7 @@
 	.prediction-block {
 		display: flex;
 		flex-direction: column;
-		gap: var(--space-4);
+		gap: var(--space-5);
 	}
 
 	.prediction {
@@ -215,8 +215,9 @@
 	}
 
 	.pred-card__title {
-		font-size: var(--text-base);
-		font-weight: 500;
+		font-size: var(--text-sm);
+		font-weight: 600;
+		letter-spacing: .01em;
 		color: var(--grey-muted);
 	}
 
@@ -246,7 +247,9 @@
 		font-size: var(--text-h2);
 		font-weight: 500;
 		letter-spacing: -0.04em;
-		line-height: 1.1;
+		line-height: 1;
+		font-variant-numeric: lining-nums tabular-nums;
+		font-feature-settings: 'lnum' 1, 'tnum' 1;
 		color: var(--grey-darker);
 	}
 
@@ -270,8 +273,9 @@
 	.pred-card__delta-icon { font-size: 12px; }
 
 	.pred-card__unit {
-		font-size: var(--text-lg);
+		font-size: var(--text-base);
 		font-weight: 600;
+		line-height: 1.35;
 		color: var(--grey-dark);
 	}
 	.pred-card__unit-row { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); width: 100%; padding: 0; border: 0; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
@@ -298,6 +302,7 @@
 		padding-top: var(--space-3);
 		font-size: var(--text-sm);
 		font-weight: 500;
+		line-height: 1.4;
 		color: var(--grey-muted);
 	}
 

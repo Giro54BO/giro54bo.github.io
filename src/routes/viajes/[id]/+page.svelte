@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { tick } from 'svelte';
 	import StatusBadge from '$lib/components/StatusBadge.svelte';
 	import TripMap from '$lib/components/TripMap.svelte';
 	import { alertas, ALERTA_TYPE_ICONS, ALERTA_TYPE_LABELS, STATE_LABELS, type TripState } from '$lib/data/trips';
@@ -130,6 +131,8 @@
 	let resolutionComment = $state('');
 	let resolutionError = $state('');
 	let resolutionCompleted = $state(false);
+	let resolutionDialog = $state<HTMLDivElement>();
+	let resolutionTrigger: HTMLButtonElement | null = null;
 
 	/** "hace 30 min" / "hace 3 h" / "hace 2 días" → minutos transcurridos. */
 	function minutosDesde(tiempo: string): number {
@@ -154,11 +157,14 @@
 	// el mismo criterio que usa el formulario para su lista de viajes.
 	const puedeReportar = $derived(trip.estado !== 'en-retorno');
 
-	function openResolution(alertId: string) {
+	async function openResolution(alertId: string, trigger: HTMLButtonElement) {
 		resolveAlertId = alertId;
 		resolutionComment = '';
 		resolutionError = '';
 		resolutionCompleted = false;
+		resolutionTrigger = trigger;
+		await tick();
+		resolutionDialog?.querySelector<HTMLElement>('textarea, button')?.focus();
 	}
 
 	function closeResolution() {
@@ -166,6 +172,8 @@
 		resolutionComment = '';
 		resolutionError = '';
 		resolutionCompleted = false;
+		resolutionTrigger?.focus();
+		resolutionTrigger = null;
 	}
 
 	function submitResolution() {
@@ -183,6 +191,19 @@
 
 	function handleResolutionKeydown(event: KeyboardEvent) {
 		if (event.key === 'Escape' && resolveAlertId) closeResolution();
+		if (event.key !== 'Tab' || !resolutionDialog) return;
+		const focusable = [...resolutionDialog.querySelectorAll<HTMLElement>('button, textarea, input, select, a[href]')]
+			.filter((element) => !element.hasAttribute('disabled') && element.getAttribute('aria-hidden') !== 'true');
+		if (!focusable.length) return;
+		const first = focusable[0];
+		const last = focusable[focusable.length - 1];
+		if (event.shiftKey && document.activeElement === first) {
+			event.preventDefault();
+			last.focus();
+		} else if (!event.shiftKey && document.activeElement === last) {
+			event.preventDefault();
+			first.focus();
+		}
 	}
 
 	// Duración aproximada del viaje: la parte de tiempo de `distancia` ("… | 22 h 16 min").
@@ -229,7 +250,7 @@
 			Volver dashboard
 		</a>
 		<div class="subheader__center">
-			<span class="subheader__id">{trip.id}</span>
+			<h1 class="subheader__id">{trip.id}</h1>
 			<span class="subheader__sep" aria-hidden="true">·</span>
 			<span class="subheader__ruta">
 				{#each desglose as segmento, si}
@@ -847,7 +868,7 @@
 										<span class="icon" aria-hidden="true">delete</span>
 									</button>
 									{#if !estaResuelta}
-										<button class="btn-resolver" type="button" onclick={() => openResolution(alerta.id)}>
+						<button class="btn-resolver" type="button" onclick={(event) => openResolution(alerta.id, event.currentTarget as HTMLButtonElement)}>
 											Resolver incidencia
 											<span class="icon" aria-hidden="true">check</span>
 										</button>
@@ -869,7 +890,7 @@
 		role="presentation"
 		onclick={(event) => event.target === event.currentTarget && closeResolution()}
 	>
-		<div class="resolution-modal" role="dialog" aria-modal="true" aria-labelledby="resolution-title">
+			<div class="resolution-modal" role="dialog" aria-modal="true" aria-labelledby="resolution-title" bind:this={resolutionDialog}>
 			{#if resolutionCompleted}
 				<div class="resolution-success" aria-live="polite">
 					<div class="resolution-success__icon" aria-hidden="true">
@@ -938,7 +959,8 @@
 		align-items: center;
 		justify-content: space-between;
 		gap: var(--space-4);
-		padding: var(--space-4) 0;
+		height: 75px;
+		padding: 0;
 		background: var(--bg);
 		border-bottom: 1px solid var(--border);
 	}
@@ -1046,8 +1068,8 @@
 	.trip-summary__help {
 		display: inline-grid;
 		place-items: center;
-		width: 18px;
-		height: 18px;
+		width: 44px;
+		height: 44px;
 		padding: 0;
 		border: none;
 		background: transparent;
@@ -1291,16 +1313,16 @@
 	/* ── Body ── */
 	.detalle-body {
 		display: grid;
-		grid-template-columns: 400px 1fr;
-		gap: var(--space-6);
+		grid-template-columns: minmax(360px, 0.85fr) minmax(0, 1.6fr);
+		gap: var(--space-8);
 		align-items: start;
-		padding-top: var(--space-4);
+		padding-top: var(--space-6);
 	}
 
 	.col-left {
 		display: flex;
 		flex-direction: column;
-		gap: var(--space-6);
+		gap: var(--space-8);
 	}
 	.col-right {
 		display: flex;
@@ -1865,8 +1887,8 @@
 	.resolution-modal__close {
 		display: grid;
 		place-items: center;
-		width: 32px;
-		height: 32px;
+		width: 44px;
+		height: 44px;
 		flex-shrink: 0;
 		border: none;
 		border-radius: var(--radius-full);
@@ -1984,7 +2006,7 @@
 		.stat-cards { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
 	}
 	@media (max-width: 700px) {
-		.subheader { flex-wrap: wrap; }
+		.subheader { height: auto; padding: var(--space-4) 0; flex-wrap: wrap; }
 		.notif-card__actions { flex-direction: column; align-items: stretch; }
 		.btn-eliminar, .btn-resolver { min-width: 0; }
 		.resolution-modal__actions { flex-direction: column-reverse; }

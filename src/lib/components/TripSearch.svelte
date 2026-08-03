@@ -1,13 +1,40 @@
 <script lang="ts">
-	import { filtros } from '$lib/data/dash-filters.svelte';
+	import { onMount } from 'svelte';
+	import { filtros, normalizarBusqueda } from '$lib/data/dash-filters.svelte';
 	import { trips, STATE_LABELS } from '$lib/data/trips';
 
 	type Suggestion = { value: string; label: string; category: string };
 
 	let focused = $state(false);
 	let activeSuggestionIndex = $state(-1);
+	let placeholderIndex = $state(0);
 
-	const query = $derived(filtros.busqueda.trim().toLowerCase());
+	const SEARCH_PLACEHOLDERS = [
+		'Buscar por despacho',
+		'Buscar por unidad',
+		'Buscar por conductor',
+		'Buscar por transportadora',
+		'Buscar por producto',
+		'Buscar por ruta',
+		'Buscar por origen',
+		'Buscar por destino',
+		'Buscar por estado',
+		'Buscar por datos SAP',
+	];
+
+	onMount(() => {
+		if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+		const rotation = window.setInterval(() => {
+			if (!focused && !filtros.busqueda.trim()) {
+				placeholderIndex = (placeholderIndex + 1) % SEARCH_PLACEHOLDERS.length;
+			}
+		}, 3200);
+
+		return () => window.clearInterval(rotation);
+	});
+
+	const query = $derived(normalizarBusqueda(filtros.busqueda));
 	const suggestions = $derived.by(() => {
 		if (!query) return [] as Suggestion[];
 
@@ -34,7 +61,7 @@
 
 		for (const trip of trips) {
 			for (const suggestion of fields(trip)) {
-				const key = suggestion.value.toLowerCase();
+				const key = normalizarBusqueda(suggestion.value);
 				if (key.includes(query) && !seen.has(key)) {
 					seen.add(key);
 					matches.push(suggestion);
@@ -65,7 +92,7 @@
 			class="search-pill__input"
 			type="search"
 			role="combobox"
-			placeholder="Buscar por despacho, unidad, conductor, transportadora, producto, ruta, origen, destino, estado, fecha o datos SAP"
+			placeholder={SEARCH_PLACEHOLDERS[placeholderIndex]}
 			bind:value={filtros.busqueda}
 			aria-label="Buscar viajes"
 			aria-controls="trip-search-results"
@@ -76,7 +103,10 @@
 			onblur={() => { setTimeout(() => { focused = false; }, 120); }}
 			oninput={() => { focused = true; activeSuggestionIndex = -1; }}
 			onkeydown={(event) => {
-				if (event.key === 'Escape') focused = false;
+				if (event.key === 'Escape') {
+					focused = false;
+					activeSuggestionIndex = -1;
+				}
 				if (event.key === 'ArrowDown' && suggestions.length) {
 					event.preventDefault();
 					activeSuggestionIndex = (activeSuggestionIndex + 1) % suggestions.length;
