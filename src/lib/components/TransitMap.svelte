@@ -3,7 +3,7 @@
 	import { goto } from '$app/navigation';
 	import maplibregl from 'maplibre-gl';
 	import 'maplibre-gl/dist/maplibre-gl.css';
-	import { trips as allTrips, type Trip } from '$lib/data/trips';
+	import { trips as allTrips, STATE_LABELS, type Trip } from '$lib/data/trips';
 	import { CITY_INFO, esNacional } from '$lib/data/geo';
 	import { COLOR_NACIONAL, COLOR_INTERNACIONAL, MAP_STYLE, routePath, cityMarkerEl, truckMarkerEl } from '$lib/map-utils';
 
@@ -14,29 +14,112 @@
 	const internacionales = mapTrips.filter(t => !esNacional(t.origen, t.destino));
 
 	let container: HTMLDivElement;
+	let mapCard: HTMLDivElement;
 	let collapsed = $state(false);
+	let isFullscreen = $state(false);
+	let mapInstance: maplibregl.Map | null = null;
+	let tripBounds: maplibregl.LngLatBounds | null = null;
+
+	async function toggleFullscreen() {
+		if (!mapCard) return;
+		if (document.fullscreenElement) {
+			await document.exitFullscreen();
+		} else if (mapCard.requestFullscreen) {
+			await mapCard.requestFullscreen();
+		}
+	}
+
+	function centerTrips() {
+		if (!mapInstance || !tripBounds || tripBounds.isEmpty()) return;
+		mapInstance.fitBounds(tripBounds, { padding: { top: 90, bottom: 90, left: 130, right: 130 }, duration: 450 });
+	}
+
+	function zoomIn() { mapInstance?.zoomIn({ duration: 220 }); }
+	function zoomOut() { mapInstance?.zoomOut({ duration: 220 }); }
 
 	// El mapa depende de WebGL y de un CDN de teselas externo. En equipos con
 	// aceleración por hardware desactivada o redes que bloquean el CDN, no puede
 	// dibujarse. En ese caso se muestra un resumen de rutas en vez de un vacío.
 	let mapFailed = $state(false);
 
-	function tripMarkerEl(trip: Trip, color: string): HTMLElement {
+	function tripMarkerEl(trip: Trip, color: string, onActivate: () => void): HTMLElement {
 		const el = truckMarkerEl(trip.unidad, color);
 		el.classList.add('tm-truck--clickable');
 		el.setAttribute('role', 'link');
 		el.setAttribute('tabindex', '0');
-		el.setAttribute('aria-label', `Ver detalle del viaje ${trip.id}`);
+		el.setAttribute('aria-label', `Ver resumen del viaje ${trip.id}`);
 
-		const openTrip = () => goto(`/viajes/${trip.id}`);
-		el.addEventListener('click', openTrip);
+		el.addEventListener('click', onActivate);
 		el.addEventListener('keydown', (event) => {
 			if (event.key === 'Enter' || event.key === ' ') {
 				event.preventDefault();
-				openTrip();
+				onActivate();
 			}
 		});
 		return el;
+	}
+
+	function estaDentroDeBolivia(trip: Trip): boolean {
+		const ubicacion = `${trip.ultimaUbicacion} ${trip.geocerca.actual ?? ''}`.toLowerCase();
+		if (trip.geocerca.actual?.startsWith('frontera-')) return false;
+		if (/(perú|peru|chile|arica|ilo|arequipa|putre|puerto-|cd-)/.test(ubicacion)) return false;
+		return /(bolivia|cochabamba|patacamaya|caracollo|oruro|turco|warnes|el alto|la paz)/.test(ubicacion);
+	}
+
+	function appendText(parent: HTMLElement, tag: string, className: string, text: string): HTMLElement {
+		const child = document.createElement(tag);
+		child.className = className;
+		child.textContent = text;
+		parent.appendChild(child);
+		return child;
+	}
+
+	function createTripPreview(trip: Trip): HTMLElement {
+		const card = document.createElement('div');
+		card.className = 'trip-map-preview';
+		card.setAttribute('role', 'dialog');
+		card.setAttribute('aria-label', `Resumen del viaje ${trip.id}`);
+
+		appendText(card, 'div', 'trip-map-preview__label', 'Correlativo único / Fecha de despacho');
+		const identity = document.createElement('div');
+		identity.className = 'trip-map-preview__identity';
+		const state = document.createElement('span');
+		state.className = `trip-map-preview__status trip-map-preview__status--${trip.estado}`;
+		state.setAttribute('aria-label', STATE_LABELS[trip.estado]);
+		appendText(state, 'span', 'icon', 'local_shipping');
+		identity.appendChild(state);
+		const identityText = document.createElement('div');
+		appendText(identityText, 'strong', '', trip.id);
+		appendText(identityText, 'span', '', trip.fechaDocumentada);
+		identity.appendChild(identityText);
+		card.appendChild(identity);
+
+		appendText(card, 'div', 'trip-map-preview__label trip-map-preview__label--route', 'Código de ruta / Desglose de la ruta / Tiempo estimado de llegada');
+		appendText(card, 'div', 'trip-map-preview__route-code', trip.rutaCodigo);
+		const route = appendText(card, 'div', 'trip-map-preview__route', '');
+		trip.rutaNombre.split(' - ').map((segment) => segment.trim()).forEach((segment, index, segments) => {
+			if (index > 0) appendText(route, 'span', 'icon trip-map-preview__arrow', 'arrow_forward');
+			const part = appendText(route, 'span', index === segments.length - 1 ? 'trip-map-preview__destination' : '', segment);
+			if (index !== segments.length - 1) part.classList.add('trip-map-preview__segment');
+		});
+		const [km, duration] = trip.distancia.split('|').map((value) => value.trim());
+		appendText(card, 'div', 'trip-map-preview__eta', `${trip.gps ? 'ETA' : 'Lead time'} ${duration ?? ''} | ${km ?? ''}`.trim());
+
+		const location = document.createElement('div');
+		location.className = 'trip-map-preview__location';
+		appendText(location, 'span', 'icon', 'help_outline');
+		appendText(location, 'span', '', 'Tránsito');
+		appendText(location, 'strong', '', estaDentroDeBolivia(trip) ? 'Bolivia' : 'Internacional');
+		card.appendChild(location);
+
+		const more = document.createElement('a');
+		more.className = 'trip-map-preview__more';
+		more.href = `/viajes/${trip.id}`;
+		more.setAttribute('aria-label', `Ver más detalles del viaje ${trip.id}`);
+		more.appendChild(document.createTextNode('VER MÁS'));
+		appendText(more, 'span', 'icon', 'arrow_forward');
+		card.appendChild(more);
+		return card;
 	}
 
 	function webglDisponible(): boolean {
@@ -63,9 +146,15 @@
 	})();
 
 	onMount(() => {
+		const handleFullscreenChange = () => {
+			isFullscreen = document.fullscreenElement === mapCard;
+			requestAnimationFrame(() => mapInstance?.resize());
+		};
+		document.addEventListener('fullscreenchange', handleFullscreenChange);
+
 		if (!webglDisponible()) {
 			mapFailed = true;
-			return;
+			return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
 		}
 
 		const routes = mapTrips
@@ -82,14 +171,41 @@
 			map = new maplibregl.Map({
 				container,
 				style: MAP_STYLE,
-				interactive: false,
+				interactive: true,
 				renderWorldCopies: false,
 				attributionControl: { compact: true },
 			});
 		} catch {
 			mapFailed = true;
-			return;
+			return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
 		}
+		mapInstance = map;
+		let activePopup: maplibregl.Popup | null = null;
+		const openPreview = (trip: Trip) => {
+			if (window.matchMedia('(max-width: 700px)').matches) {
+				goto(`/viajes/${trip.id}`);
+				return;
+			}
+			activePopup?.remove();
+			activePopup = new maplibregl.Popup({
+				closeButton: true,
+				closeOnClick: false,
+				closeOnMove: false,
+				anchor: 'left',
+				offset: 22,
+				maxWidth: 'min(390px, calc(100vw - 32px))',
+			})
+				.setLngLat([trip.coordenadas.lng, trip.coordenadas.lat])
+				.setDOMContent(createTripPreview(trip))
+				.addTo(map);
+			// Center the selected vehicle and step back slightly so the full
+			// preview remains visible on both desktop and the shorter mobile map.
+			map.easeTo({
+				center: [trip.coordenadas.lng, trip.coordenadas.lat],
+				zoom: Math.max(map.getZoom() - 0.65, 2.5),
+				duration: 280,
+			});
+		};
 
 		// Si el estilo (CDN) no carga en unos segundos, se asume bloqueado y se
 		// muestra el resumen de respaldo en vez de un mapa en blanco.
@@ -105,6 +221,7 @@
 			if (r.trip.gps) bounds.extend([r.trip.coordenadas.lng, r.trip.coordenadas.lat]);
 		}
 		if (!bounds.isEmpty()) {
+			tripBounds = bounds;
 			map.fitBounds(bounds, { padding: { top: 90, bottom: 60, left: 110, right: 110 }, animate: false });
 		}
 
@@ -163,7 +280,7 @@
 			const stacked = coordCount.get(key) ?? 0;
 			coordCount.set(key, stacked + 1);
 			markers.push(
-				new maplibregl.Marker({ element: tripMarkerEl(r.trip, r.color), offset: [0, stacked * 30] })
+				new maplibregl.Marker({ element: tripMarkerEl(r.trip, r.color, () => openPreview(r.trip)), offset: [0, stacked * 30] })
 					.setLngLat([r.trip.coordenadas.lng, r.trip.coordenadas.lat])
 					.addTo(map)
 			);
@@ -171,13 +288,17 @@
 
 		return () => {
 			clearTimeout(failTimer);
+			activePopup?.remove();
 			markers.forEach(m => m.remove());
 			map.remove();
+			mapInstance = null;
+			tripBounds = null;
+			document.removeEventListener('fullscreenchange', handleFullscreenChange);
 		};
 	});
 </script>
 
-<div class="map-card" class:map-card--collapsed={collapsed}>
+<div class="map-card" class:map-card--collapsed={collapsed} class:map-card--fullscreen={isFullscreen} bind:this={mapCard}>
 	<div class="map-el" class:map-el--hidden={mapFailed} bind:this={container} role="img" aria-label="Mapa ilustrativo de los {mapTrips.length} despachos activos"></div>
 
 	{#if mapFailed}
@@ -210,7 +331,28 @@
 		>
 			<span class="icon" aria-hidden="true">{collapsed ? 'keyboard_arrow_down' : 'keyboard_arrow_up'}</span>
 		</button>
+		<div class="map-controls" aria-label="Controles del mapa">
+			<button class="map-control" type="button" onclick={centerTrips} aria-label="Centrar mapa en todos los viajes" title="Centrar mapa en todos los viajes">
+				<span class="icon" aria-hidden="true">my_location</span>
+			</button>
+			<button class="map-control" type="button" onclick={zoomIn} aria-label="Acercar mapa" title="Acercar mapa">
+				<span class="icon" aria-hidden="true">add</span>
+			</button>
+			<button class="map-control" type="button" onclick={zoomOut} aria-label="Alejar mapa" title="Alejar mapa">
+				<span class="icon" aria-hidden="true">remove</span>
+			</button>
+		</div>
 	{/if}
+
+	<button
+		class="map-fullscreen"
+		type="button"
+		onclick={toggleFullscreen}
+		aria-label={isFullscreen ? 'Salir de pantalla completa' : 'Ver mapa en pantalla completa'}
+		title={isFullscreen ? 'Salir de pantalla completa' : 'Ver mapa en pantalla completa'}
+	>
+		<span class="icon" aria-hidden="true">{isFullscreen ? 'fullscreen_exit' : 'fullscreen'}</span>
+	</button>
 
 	<div class="map-legend" aria-label="Leyenda del mapa">
 		<span class="map-legend__title">MAPA</span>
@@ -237,6 +379,15 @@
 	.map-card--collapsed {
 		height: 75px;
 	}
+	.map-card--fullscreen {
+		position: fixed;
+		inset: 0;
+		z-index: 1000;
+		width: 100vw;
+		height: 100vh;
+		border-radius: 0;
+	}
+	.map-card--fullscreen .map-el { height: 100vh; }
 
 	.map-el {
 		height: 580px;
@@ -301,12 +452,55 @@
 	}
 	.map-collapse:hover { background: var(--teal-50); }
 	.map-collapse:focus-visible { outline: 2px solid var(--blue-dark); outline-offset: 2px; }
+	.map-fullscreen {
+		position: absolute;
+		top: 16px;
+		right: 16px;
+		width: 43px;
+		height: 43px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background: var(--bg);
+		border: 1.5px solid var(--blue-dark);
+		border-radius: var(--radius-lg);
+		color: var(--blue-dark);
+		cursor: pointer;
+		z-index: 6;
+	}
+	.map-fullscreen:hover { background: var(--teal-50); }
+	.map-fullscreen:focus-visible { outline: 2px solid var(--blue-dark); outline-offset: 2px; }
+	.map-controls {
+		position: absolute;
+		right: 16px;
+		bottom: 16px;
+		z-index: 6;
+		display: flex;
+		flex-direction: column;
+		background: var(--bg);
+		border: 1.5px solid var(--blue-dark);
+		border-radius: var(--radius-lg);
+		overflow: hidden;
+		box-shadow: var(--shadow-sm);
+	}
+	.map-control {
+		width: 43px;
+		height: 43px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		color: var(--blue-dark);
+		background: var(--bg);
+	}
+	.map-control + .map-control { border-top: 1px solid var(--border-2); }
+	.map-control:hover { background: var(--teal-50); }
+	.map-control:focus-visible { position: relative; z-index: 1; outline: 2px solid var(--blue-normal); outline-offset: -3px; }
 
 	/* ── Leyenda (Figma 218:596) ── */
 	.map-legend {
 		position: absolute;
 		top: 16px;
-		right: 16px;
+		left: 75px;
 		display: flex;
 		align-items: center;
 		gap: var(--space-8);
@@ -357,6 +551,8 @@
 			overflow-x: auto;
 			scrollbar-width: none;
 		}
+		.map-fullscreen { top: 16px; right: 16px; }
+		:global(.maplibregl-popup) { display: none; }
 		.map-legend::-webkit-scrollbar { display: none; }
 		.map-legend__title { flex: 0 0 auto; }
 		.map-legend__item { flex: 0 0 auto; }

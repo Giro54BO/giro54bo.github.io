@@ -8,6 +8,7 @@
   import { filtros, filtrarViajes } from '$lib/data/dash-filters.svelte';
   import { trips } from '$lib/data/trips';
 
+  let filtersOpen = $state(false);
   const filteredTrips = $derived(filtrarViajes(trips, { includeSearch: true }));
   const mapKey = $derived(filteredTrips.map((trip) => trip.id).join(','));
 </script>
@@ -15,25 +16,31 @@
 <a href="#main-content" class="skip-link">Ir al contenido principal</a>
 
 <div class="dashboard" id="main-content">
-  <div class="page-header">
+  <div class="page-header filter-page-header">
     <h1 class="section-heading section-heading--h1">
       <span class="icon section-heading__icon" aria-hidden="true">grid_view</span>
       Dashboard
     </h1>
+    <div class="filter-page-header__controls">
+      <div class="viajes-search-row dashboard-search-row">
+        <TripSearch />
+        <button class="btn-buscar" type="button">BUSCAR</button>
+      </div>
+      <button class="filters-toggle" type="button" aria-expanded={filtersOpen} aria-controls="dashboard-filters" onclick={() => filtersOpen = !filtersOpen}>
+        <span>FILTROS</span>
+        <span class="icon" aria-hidden="true">{filtersOpen ? 'expand_less' : 'tune'}</span>
+      </button>
+    </div>
   </div>
 
-  <div class="viajes-search-row dashboard-search-row">
-    <TripSearch />
-    <button class="btn-buscar" type="button">BUSCAR</button>
-  </div>
-
-  <div class="filters-divider" aria-hidden="true"></div>
-
-  <section class="filter-section" aria-label="Filtros del Dashboard">
-    <FilterSectionHeader />
-    <DashFilters />
-    <StatusChips />
-  </section>
+  {#if filtersOpen}
+    <div class="filters-divider" aria-hidden="true"></div>
+    <section class="filter-section" id="dashboard-filters" aria-label="Filtros del Dashboard">
+      <FilterSectionHeader />
+      <DashFilters />
+      <StatusChips />
+    </section>
+  {/if}
 
   <!-- Map and prediction -->
   {#key mapKey}

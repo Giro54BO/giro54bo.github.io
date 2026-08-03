@@ -6,6 +6,7 @@
   import { filtros, filtrarViajes } from '$lib/data/dash-filters.svelte';
   import { trips, STATE_LABELS, type TripState } from '$lib/data/trips';
 
+  let filtersOpen = $state(false);
   const dashTrips = $derived(filtrarViajes(trips, { includeSearch: true }));
 
   const STATUS_COLORS: Partial<Record<TripState, { bg: string; ink: string }>> = {
@@ -60,25 +61,31 @@
 </script>
 
 <div class="viajes" id="main-content">
-  <div class="viajes-header">
+  <div class="viajes-header filter-page-header">
     <h2 class="section-heading">
       <span class="icon section-heading__icon" aria-hidden="true">route</span>
       Viajes
     </h2>
+    <div class="filter-page-header__controls">
+      <div class="viajes-search-row">
+        <TripSearch />
+        <button class="btn-buscar" type="button">BUSCAR</button>
+      </div>
+      <button class="filters-toggle" type="button" aria-expanded={filtersOpen} aria-controls="viajes-filters" onclick={() => filtersOpen = !filtersOpen}>
+        <span>FILTROS</span>
+        <span class="icon" aria-hidden="true">{filtersOpen ? 'expand_less' : 'tune'}</span>
+      </button>
+    </div>
   </div>
 
-  <div class="viajes-search-row">
-    <TripSearch />
-    <button class="btn-buscar" type="button">BUSCAR</button>
-  </div>
-
-  <div class="filters-divider" aria-hidden="true"></div>
-
-  <section class="filter-section" aria-label="Filtros de Viajes">
-    <FilterSectionHeader />
-    <DashFilters />
-    <StatusChips />
-  </section>
+  {#if filtersOpen}
+    <div class="filters-divider" aria-hidden="true"></div>
+    <section class="filter-section" id="viajes-filters" aria-label="Filtros de Viajes">
+      <FilterSectionHeader />
+      <DashFilters />
+      <StatusChips />
+    </section>
+  {/if}
 
   <div class="cards-container" role="region" aria-label="Tabla de despachos activos">
     <div class="cards-header" aria-hidden="true">

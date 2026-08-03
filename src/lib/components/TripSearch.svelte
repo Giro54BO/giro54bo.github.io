@@ -19,12 +19,17 @@
 			{ value: trip.conductor, label: trip.conductor, category: 'Conductor' },
 			{ value: trip.transportista, label: trip.transportista, category: 'Transportadora' },
 			{ value: trip.carga, label: trip.carga, category: 'Producto' },
+			{ value: trip.rutaCodigo, label: trip.rutaCodigo, category: 'Código de ruta' },
 			{ value: trip.rutaNombre, label: trip.rutaNombre, category: 'Ruta' },
 			{ value: trip.origen, label: trip.origen, category: 'Origen' },
 			{ value: trip.destino, label: trip.destino, category: 'Destino' },
 			{ value: STATE_LABELS[trip.estado], label: STATE_LABELS[trip.estado], category: 'Estado' },
 			{ value: trip.fechaDocumentada, label: trip.fechaDocumentada, category: 'Fecha' },
 			{ value: trip.sap.cliCodigo, label: trip.sap.cliCodigo, category: 'Cliente' },
+			{ value: trip.sap.salidaMercancia, label: trip.sap.salidaMercancia, category: 'Entrega SAP' },
+			{ value: trip.sap.pedido, label: trip.sap.pedido, category: 'Pedido SAP' },
+			{ value: trip.sap.numeroTransporte, label: trip.sap.numeroTransporte, category: 'Transporte SAP' },
+			{ value: trip.sap.cenCodigo, label: trip.sap.cenCodigo, category: 'Centro SAP' },
 		];
 
 		for (const trip of trips) {
@@ -48,7 +53,7 @@
 
 	function clearSearch() {
 		filtros.busqueda = '';
-		focused = true;
+		focused = false;
 		activeSuggestionIndex = -1;
 	}
 </script>
@@ -60,7 +65,7 @@
 			class="search-pill__input"
 			type="search"
 			role="combobox"
-			placeholder="Buscar viaje por unidad, ruta, conductor"
+			placeholder="Buscar por despacho, unidad, conductor, transportadora, producto, ruta, origen, destino, estado, fecha o datos SAP"
 			bind:value={filtros.busqueda}
 			aria-label="Buscar viajes"
 			aria-controls="trip-search-results"
@@ -120,7 +125,13 @@
 			{:else}
 				<div class="trip-search__empty" role="status">
 					<span>No se encontraron resultados para tu búsqueda.</span>
-					<button type="button" onclick={clearSearch}>Limpiar búsqueda</button>
+					<button
+						type="button"
+						onmousedown={(event) => event.preventDefault()}
+						onclick={(event) => { event.preventDefault(); clearSearch(); }}
+					>
+						Limpiar búsqueda
+					</button>
 				</div>
 			{/if}
 		</div>
