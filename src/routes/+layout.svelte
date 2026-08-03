@@ -40,6 +40,15 @@
 	   por eso no lleva relleno superior en el shell. */
 	.shell--no-nav { padding-top: 0; }
 
+	/* Wider desktop tiers: expand the work area progressively without letting
+	   the operational surfaces become uncomfortably wide. */
+	@media (min-width: 1536px) {
+		.shell { max-width: 1536px; }
+	}
+	@media (min-width: 1920px) {
+		.shell { max-width: 1800px; }
+	}
+
 	.shell__main {
 		flex: 1;
 		min-width: 0;

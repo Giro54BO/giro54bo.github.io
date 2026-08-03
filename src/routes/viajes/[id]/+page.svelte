@@ -1,7 +1,7 @@
 <script lang="ts">
 	import StatusBadge from '$lib/components/StatusBadge.svelte';
 	import TripMap from '$lib/components/TripMap.svelte';
-	import { alertas, STATE_LABELS, type TripState } from '$lib/data/trips';
+	import { alertas, ALERTA_TYPE_ICONS, ALERTA_TYPE_LABELS, STATE_LABELS, type TripState } from '$lib/data/trips';
 	import type { TripEvent } from '$lib/data/trips';
 	import { GEOCERCAS, GEOCERCA_ICONS, GEOCERCA_TIPO_LABELS, type Geocerca } from '$lib/data/geo';
 	import { parseKg, fmtTon, kgToTon } from '$lib/data/units';
@@ -154,10 +154,6 @@
 	// el mismo criterio que usa el formulario para su lista de viajes.
 	const puedeReportar = $derived(trip.estado !== 'en-retorno');
 
-	const alertaTypeLabels: Record<string, string> = {
-		critico: 'Crítico', retraso: 'Retraso', parada: 'Parada obligatoria', desvio: 'Desvío de ruta',
-	};
-
 	function openResolution(alertId: string) {
 		resolveAlertId = alertId;
 		resolutionComment = '';
@@ -255,11 +251,11 @@
 	<!-- ── Resumen del viaje ── -->
 	<div class="trip-summary">
 		<span class="trip-summary__metric">
-			<button class="trip-summary__help" type="button" aria-label="Qué significa Lead time">
+			<button class="trip-summary__help" type="button" aria-label="Qué significa Lead time total">
 				<span class="icon" aria-hidden="true">help_outline</span>
 				<span class="trip-summary__tooltip" role="tooltip">Tiempo total promedio estimado desde el origen hasta el destino, considerando conducción, descansos y paradas.</span>
 			</button>
-			<span class="trip-summary__label">Lead time</span>
+			<span class="trip-summary__label">Lead time total</span>
 			<strong>{duracion}</strong>
 		</span>
 		{#if segmentLeadTimes.origenFrontera || segmentLeadTimes.fronteraDestino}
@@ -827,14 +823,14 @@
 								class="notif-card"
 								class:notif-card--resuelta={estaResuelta}
 								role="article"
-								aria-label="Incidencia {alertaTypeLabels[alerta.tipo]}{estaResuelta ? ', resuelta' : ''}"
+								aria-label="Incidencia {ALERTA_TYPE_LABELS[alerta.tipo]}{estaResuelta ? ', resuelta' : ''}"
 							>
 								<div class="notif-card__header">
 									<span class="alert-type alert-type--{alerta.tipo}">
 										<span class="icon icon--sm" aria-hidden="true">
-											{#if alerta.tipo === 'critico'}report{:else if alerta.tipo === 'retraso'}schedule{:else if alerta.tipo === 'parada'}pause_circle{:else}alt_route{/if}
+											{ALERTA_TYPE_ICONS[alerta.tipo]}
 										</span>
-										{alertaTypeLabels[alerta.tipo]}
+										{ALERTA_TYPE_LABELS[alerta.tipo]}
 									</span>
 									{#if estaResuelta}
 										<span class="alert-type alert-type--resuelta">

@@ -1,8 +1,5 @@
 <script lang="ts">
-  import { alertas } from '$lib/data/trips';
-  const alertaTypeLabels: Record<string, string> = {
-    critico: 'Crítico', retraso: 'Retraso', parada: 'Parada obligatoria', desvio: 'Desvío de ruta',
-  };
+  import { alertas, ALERTA_TYPE_ICONS, ALERTA_TYPE_LABELS, trips } from '$lib/data/trips';
 </script>
 
 <div class="incidencias" id="main-content">
@@ -22,13 +19,47 @@
   {:else}
     <ul class="alerts-grid" role="list">
       {#each alertas as alerta (alerta.id)}
-        <li class="alert-card" role="article">
+        {@const linkedTrip = alerta.tripId ? trips.find((trip) => trip.id === alerta.tripId) : null}
+        {#snippet incidentBody()}
           <div class="alert-card__header">
-            <span class="alert-card__type">{alertaTypeLabels[alerta.tipo]}</span>
-            <span class="alert-card__unit">{alerta.tripId}</span>
+            <span class="alert-card__type alert-card__type--{alerta.tipo}">
+              <span class="icon icon--sm" aria-hidden="true">{ALERTA_TYPE_ICONS[alerta.tipo]}</span>
+              {ALERTA_TYPE_LABELS[alerta.tipo]}
+            </span>
+            {#if linkedTrip}
+              <span class="alert-card__unit">{linkedTrip.id}</span>
+            {:else}
+              <span class="alert-card__unit alert-card__unit--global">
+                <span class="icon icon--sm" aria-hidden="true">public</span>
+                Global
+              </span>
+            {/if}
           </div>
           <p class="alert-card__message">{alerta.mensaje}</p>
-        </li>
+          <div class="alert-card__footer">
+            <span class="alert-card__time">{alerta.tiempo}</span>
+            {#if linkedTrip}
+              <span class="alert-card__action">
+                VER VIAJE
+                <span class="icon" aria-hidden="true">arrow_forward</span>
+              </span>
+            {/if}
+          </div>
+        {/snippet}
+
+        {#if linkedTrip}
+          <a
+            class="alert-card alert-card--linked"
+            href={`/viajes/${linkedTrip.id}`}
+            aria-label={`Incidencia ${ALERTA_TYPE_LABELS[alerta.tipo]} en el viaje ${linkedTrip.id}. Ver viaje.`}
+          >
+            {@render incidentBody()}
+          </a>
+        {:else}
+          <div class="alert-card" role="article">
+            {@render incidentBody()}
+          </div>
+        {/if}
       {/each}
     </ul>
   {/if}

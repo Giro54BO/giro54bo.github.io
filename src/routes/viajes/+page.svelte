@@ -4,7 +4,7 @@
   import FilterSectionHeader from '$lib/components/FilterSectionHeader.svelte';
   import TripSearch from '$lib/components/TripSearch.svelte';
   import { filtros, filtrarViajes } from '$lib/data/dash-filters.svelte';
-  import { trips, STATE_LABELS, type TripState } from '$lib/data/trips';
+  import { trips, STATE_ICONS, STATE_LABELS, type TripState } from '$lib/data/trips';
 
   let filtersOpen = $state(false);
   const dashTrips = $derived(filtrarViajes(trips, { includeSearch: true }));
@@ -21,7 +21,7 @@
   function etaLine(trip: { distancia: string; gps: boolean }) {
     const [km, dur] = trip.distancia.split('|').map(s => s.trim());
     if (!dur) return trip.distancia;
-    return `${trip.gps ? 'ETA' : 'Lead time'} ${dur} | ${km}`;
+    return `${trip.gps ? 'ETA' : 'Lead time total'} ${dur} | ${km}`;
   }
 
   function estaDentroDeBolivia(trip: { ultimaUbicacion: string; geocerca: { actual?: string } }) {
@@ -30,15 +30,6 @@
     if (/(perú|peru|chile|arica|ilo|arequipa|putre|puerto-|cd-)/.test(ubicacion)) return false;
     return /(bolivia|cochabamba|patacamaya|caracollo|oruro|turco|warnes|el alto|la paz)/.test(ubicacion);
   }
-
-  const STATE_ICONS: Record<TripState, string> = {
-    'en-transito':     'local_shipping',
-    'en-frontera':     'flag',
-    'incidencia':      'report',
-    'en-carga':        'forklift',
-    'en-descarga':     'download',
-    'en-retorno':      'undo',
-  };
 
   const filteredTrips = $derived(
     dashTrips.slice().sort((a, b) => {

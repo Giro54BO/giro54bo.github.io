@@ -120,12 +120,29 @@ export interface Trip {
 
 export interface Alerta {
 	id: string;
-	tripId: string;
-	unidad: string;
-	tipo: 'desvio' | 'parada' | 'retraso' | 'critico';
+	/** Omitido únicamente para incidencias globales que afectan a la red. */
+	tripId?: string;
+	unidad?: string;
+	tipo: AlertaTipo;
 	mensaje: string;
 	tiempo: string;
 }
+
+export type AlertaTipo = 'desvio' | 'parada' | 'retraso' | 'critico';
+
+export const ALERTA_TYPE_LABELS: Record<AlertaTipo, string> = {
+	critico: 'Crítico',
+	retraso: 'Retraso',
+	parada: 'Parada obligatoria',
+	desvio: 'Desvío de ruta',
+};
+
+export const ALERTA_TYPE_ICONS: Record<AlertaTipo, string> = {
+	critico: 'report',
+	retraso: 'schedule',
+	parada: 'pause_circle',
+	desvio: 'alt_route',
+};
 
 export const STATE_LABELS: Record<TripState, string> = {
 	'en-carga':        'En carga',
@@ -134,6 +151,16 @@ export const STATE_LABELS: Record<TripState, string> = {
 	'en-descarga':     'En descarga',
 	'incidencia':      'Incidencia',
 	'en-retorno':      'Disponible',
+};
+
+/** Shared status iconography used by badges, filters, tables, and map previews. */
+export const STATE_ICONS: Record<TripState, string> = {
+	'en-carga':        'forklift',
+	'en-transito':     'local_shipping',
+	'en-frontera':     'flag',
+	'en-descarga':     'download',
+	'en-retorno':      'undo',
+	'incidencia':      'report',
 };
 
 const rawTrips: Trip[] = [
@@ -899,6 +926,13 @@ export const alertas: Alerta[] = [
 		tipo: 'parada',
 		mensaje: 'Unidad en espera de carga por más de 1h en planta Oruro.',
 		tiempo: 'hace 30 min',
+	},
+	{
+		// Incidencia global: no pertenece a un despacho concreto.
+		id: 'A-004',
+		tipo: 'desvio',
+		mensaje: 'Bloqueo preventivo en la ruta hacia Desaguadero. Coordinación monitorea el desvío.',
+		tiempo: 'hace 42 min',
 	},
 ];
 

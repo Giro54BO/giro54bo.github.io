@@ -1,21 +1,13 @@
 <script lang="ts">
 	import type { TripState } from '$lib/data/trips';
-	import { STATE_LABELS } from '$lib/data/trips';
+	import { STATE_ICONS, STATE_LABELS } from '$lib/data/trips';
 
 	let { estado, size = 'md' }: { estado: TripState; size?: 'sm' | 'md' } = $props();
 
-	const ICONS: Record<TripState, string> = {
-		'en-carga':        'forklift',
-		'en-transito':     'local_shipping',
-		'en-frontera':     'flag',
-		'en-descarga':     'download',
-		'en-retorno':      'undo',
-		'incidencia':      'report',
-	};
 </script>
 
 <span class="badge badge--{estado} badge--{size} tooltip-trigger" role="status" aria-label={STATE_LABELS[estado]}>
-	<span class="icon icon--sm" aria-hidden="true">{ICONS[estado]}</span>
+	<span class="icon icon--sm" aria-hidden="true">{STATE_ICONS[estado]}</span>
 	<span class="tooltip-bubble">{STATE_LABELS[estado]}</span>
 	{STATE_LABELS[estado]}
 </span>

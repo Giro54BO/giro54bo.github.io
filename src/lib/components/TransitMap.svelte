@@ -3,7 +3,7 @@
 	import { goto } from '$app/navigation';
 	import maplibregl from 'maplibre-gl';
 	import 'maplibre-gl/dist/maplibre-gl.css';
-	import { trips as allTrips, STATE_LABELS, type Trip } from '$lib/data/trips';
+	import { trips as allTrips, STATE_ICONS, STATE_LABELS, type Trip } from '$lib/data/trips';
 	import { CITY_INFO, esNacional } from '$lib/data/geo';
 	import { COLOR_NACIONAL, COLOR_INTERNACIONAL, MAP_STYLE, routePath, cityMarkerEl, truckMarkerEl } from '$lib/map-utils';
 
@@ -84,9 +84,10 @@
 		const identity = document.createElement('div');
 		identity.className = 'trip-map-preview__identity';
 		const state = document.createElement('span');
-		state.className = `trip-map-preview__status trip-map-preview__status--${trip.estado}`;
+		state.className = `trip-map-preview__status trip-map-preview__status--${trip.estado} tooltip-trigger`;
 		state.setAttribute('aria-label', STATE_LABELS[trip.estado]);
-		appendText(state, 'span', 'icon', 'local_shipping');
+		appendText(state, 'span', 'icon', STATE_ICONS[trip.estado]);
+		appendText(state, 'span', 'tooltip-bubble', STATE_LABELS[trip.estado]);
 		identity.appendChild(state);
 		const identityText = document.createElement('div');
 		appendText(identityText, 'strong', '', trip.id);
@@ -103,11 +104,14 @@
 			if (index !== segments.length - 1) part.classList.add('trip-map-preview__segment');
 		});
 		const [km, duration] = trip.distancia.split('|').map((value) => value.trim());
-		appendText(card, 'div', 'trip-map-preview__eta', `${trip.gps ? 'ETA' : 'Lead time'} ${duration ?? ''} | ${km ?? ''}`.trim());
+		appendText(card, 'div', 'trip-map-preview__eta', `${trip.gps ? 'ETA' : 'Lead time total'} ${duration ?? ''} | ${km ?? ''}`.trim());
 
 		const location = document.createElement('div');
 		location.className = 'trip-map-preview__location';
-		appendText(location, 'span', 'icon', 'help_outline');
+		const locationHelp = appendText(location, 'span', 'icon tooltip-trigger trip-map-preview__location-help', 'help_outline');
+		const locationLabel = estaDentroDeBolivia(trip) ? 'Dentro de Bolivia' : 'Fuera de Bolivia';
+		locationHelp.setAttribute('aria-label', locationLabel);
+		appendText(locationHelp, 'span', 'tooltip-bubble', locationLabel);
 		appendText(location, 'span', '', 'Tránsito');
 		appendText(location, 'strong', '', estaDentroDeBolivia(trip) ? 'Bolivia' : 'Internacional');
 		card.appendChild(location);

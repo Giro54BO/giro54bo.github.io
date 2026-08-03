@@ -1,15 +1,15 @@
 <script lang="ts">
 	import { filtros, filtrarViajes } from '$lib/data/dash-filters.svelte';
-	import { getStateCounts, trips, STATE_LABELS, type TripState } from '$lib/data/trips';
+	import { getStateCounts, trips, STATE_ICONS, STATE_LABELS, type TripState } from '$lib/data/trips';
 
 	const counts = $derived(getStateCounts(filtrarViajes(trips, { includeStatus: false })));
-	const states = $derived<{ estado: TripState; icon: string; count: number }[]>([
-		{ estado: 'en-carga', icon: 'forklift', count: counts.enCarga },
-		{ estado: 'en-transito', icon: 'local_shipping', count: counts.enTransito },
-		{ estado: 'en-frontera', icon: 'flag', count: counts.enFrontera },
-		{ estado: 'en-descarga', icon: 'download', count: counts.enDescarga },
-		{ estado: 'incidencia', icon: 'report', count: counts.conIncidencia },
-		{ estado: 'en-retorno', icon: 'undo', count: counts.enRetorno },
+	const states = $derived<{ estado: TripState; count: number }[]>([
+		{ estado: 'en-carga', count: counts.enCarga },
+		{ estado: 'en-transito', count: counts.enTransito },
+		{ estado: 'en-frontera', count: counts.enFrontera },
+		{ estado: 'en-descarga', count: counts.enDescarga },
+		{ estado: 'incidencia', count: counts.conIncidencia },
+		{ estado: 'en-retorno', count: counts.enRetorno },
 	]);
 
 	function toggle(estado: TripState | null) {
@@ -27,7 +27,7 @@
 		</button>
 		{#each states as item (item.estado)}
 			<button class="filter-chip" class:filter-chip--active={filtros.estado === item.estado} type="button" onclick={() => toggle(item.estado)} aria-pressed={filtros.estado === item.estado}>
-				<span class="icon filter-chip__icon" aria-hidden="true">{item.icon}</span>
+				<span class="icon filter-chip__icon" aria-hidden="true">{STATE_ICONS[item.estado]}</span>
 				{STATE_LABELS[item.estado]}
 				<span class="filter-chip__count">{item.count}</span>
 			</button>
