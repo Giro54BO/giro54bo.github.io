@@ -480,8 +480,56 @@ body {
 .search-pill:focus-within,
 .search-pill--filled { border-color: var(--blue-normal); box-shadow: 0 0 0 3px oklch(0.47 0.07 215 / 0.12); }
 .search-pill__icon { color: var(--blue-dark); }
+.search-pill__field { position: relative; flex: 1; min-width: 0; display: flex; align-items: center; }
 .search-pill__input { width: 100%; min-width: 0; overflow: hidden; border: 0; outline: 0; background: transparent; font: var(--text-sm) var(--font-body); text-overflow: ellipsis; white-space: nowrap; }
 .search-pill__input::-webkit-search-cancel-button { appearance: none; display: none; }
+/* El marcador nativo sólo se ve con foco (hint estático). Sin foco lo cubre el
+   marcador animado, así que se oculta para no duplicarlo. */
+.search-pill__input::placeholder { color: var(--grey-muted); }
+.search-pill__input:not(:focus)::placeholder { color: transparent; }
+
+/* ── Marcador de posición animado: ejemplos que rotan + destello ── */
+.search-ph {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	align-items: center;
+	gap: 5px;
+	pointer-events: none;
+	font: var(--text-sm) var(--font-body);
+	white-space: nowrap;
+	overflow: hidden;
+}
+.search-ph__line { display: inline-flex; align-items: center; gap: 5px; animation: search-ph-in 0.4s var(--ease-out-quart) both; }
+.search-ph__prefix { color: var(--grey-muted); }
+.search-ph__quote {
+	/* Base gris; una banda oscura (el destello) recorre el ejemplo de izq. a der. */
+	background: linear-gradient(
+		100deg,
+		var(--grey-muted) 0%,
+		var(--grey-muted) 34%,
+		var(--grey-darker) 50%,
+		var(--grey-muted) 66%,
+		var(--grey-muted) 100%
+	);
+	background-size: 300% 100%;
+	-webkit-background-clip: text;
+	background-clip: text;
+	color: transparent;
+	-webkit-text-fill-color: transparent;
+	animation: search-gleam 2.6s ease-in-out infinite;
+}
+@keyframes search-ph-in {
+	from { opacity: 0; transform: translateX(5px); }
+	to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes search-gleam {
+	from { background-position: 100% 0; }
+	to   { background-position: 0% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+	.search-ph__quote { animation: none; background-position: 50% 0; }
+}
 .search-pill__clear { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 44px; width: 44px; height: 44px; padding: 0; border-radius: 50%; background: transparent; color: var(--surface); }
 .search-pill__clear:hover { opacity: .82; }
 .search-pill__clear .icon { display: inline-grid; place-items: center; width: 24px; height: 24px; padding: 0; border-radius: 50%; background: var(--blue-dark); font-size: 16px; line-height: 1; }

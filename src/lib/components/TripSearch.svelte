@@ -7,29 +7,31 @@
 
 	let focused = $state(false);
 	let activeSuggestionIndex = $state(-1);
-	let placeholderIndex = $state(0);
+	let ejemploIndex = $state(0);
 
-	const SEARCH_PLACEHOLDERS = [
-		'Buscar por despacho',
-		'Buscar por unidad',
-		'Buscar por conductor',
-		'Buscar por transportadora',
-		'Buscar por producto',
-		'Buscar por ruta',
-		'Buscar por origen',
-		'Buscar por destino',
-		'Buscar por estado',
-		'Buscar por datos SAP',
+	// Marcador de posición animado: nombra el parámetro buscable y da un ejemplo
+	// real (todos coinciden con algún campo). El destello recorre el ejemplo.
+	const EJEMPLOS = [
+		{ param: 'despacho',       ejemplo: 'PEWDSP206746' },
+		{ param: 'unidad',         ejemplo: '794UTB' },
+		{ param: 'transportadora', ejemplo: 'EMPRESA EL PORVENIR' },
+		{ param: 'producto',       ejemplo: 'TORTA DE SOYA' },
+		{ param: 'origen',         ejemplo: 'Oruro' },
+		{ param: 'destino',        ejemplo: 'Arequipa' },
+		{ param: 'conductor',      ejemplo: '5971661' },
+		{ param: 'ruta',           ejemplo: 'BOARIC' },
+		{ param: 'datos SAP',      ejemplo: '6012827783' },
 	];
+
+	// El marcador animado sólo se muestra cuando el campo está vacío y sin foco.
+	const mostrarEjemplo = $derived(!focused && !filtros.busqueda.trim());
 
 	onMount(() => {
 		if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
 		const rotation = window.setInterval(() => {
-			if (!focused && !filtros.busqueda.trim()) {
-				placeholderIndex = (placeholderIndex + 1) % SEARCH_PLACEHOLDERS.length;
-			}
-		}, 2400);
+			if (mostrarEjemplo) ejemploIndex = (ejemploIndex + 1) % EJEMPLOS.length;
+		}, 3200);
 
 		return () => window.clearInterval(rotation);
 	});
@@ -88,11 +90,12 @@
 <div class="trip-search">
 	<div class="search-pill" class:search-pill--filled={!!filtros.busqueda.trim()}>
 		<span class="icon icon--sm search-pill__icon" aria-hidden="true">search</span>
+		<div class="search-pill__field">
 		<input
 			class="search-pill__input"
 			type="search"
 			role="combobox"
-			placeholder={SEARCH_PLACEHOLDERS[placeholderIndex]}
+			placeholder="Buscar viajes…"
 			bind:value={filtros.busqueda}
 			aria-label="Buscar viajes"
 			aria-controls="trip-search-results"
@@ -122,6 +125,19 @@
 				}
 			}}
 		/>
+			<!-- Marcador de posición animado: rota ejemplos entre comillas y un
+			     destello los recorre. Sólo con el campo vacío y sin foco. -->
+			{#if mostrarEjemplo}
+				<div class="search-ph" aria-hidden="true">
+					{#key ejemploIndex}
+						<span class="search-ph__line">
+							<span class="search-ph__prefix">Buscar por {EJEMPLOS[ejemploIndex].param}, p. ej.</span>
+							<span class="search-ph__quote">‘{EJEMPLOS[ejemploIndex].ejemplo}’</span>
+						</span>
+					{/key}
+				</div>
+			{/if}
+		</div>
 		{#if filtros.busqueda}
 			<button
 				class="search-pill__clear"
