@@ -3,6 +3,12 @@ import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vite';
 
 export default defineConfig({
+	// Honra el puerto asignado por el entorno (variable PORT). Vite no lee PORT
+	// por defecto, así que sin esto el servidor de desarrollo ignoraría el puerto
+	// que le asigna la herramienta de vista previa y elegiría otro.
+	server: process.env.PORT
+		? { port: Number(process.env.PORT), strictPort: true }
+		: undefined,
 	plugins: [
 		sveltekit({
 			compilerOptions: {
