@@ -8,10 +8,15 @@
 	import { COLOR_NACIONAL, COLOR_INTERNACIONAL, MAP_STYLE, routePath, cityMarkerEl, truckMarkerEl } from '$lib/map-utils';
 
 	// El mapa refleja los mismos despachos que la tabla (filtrables desde el dashboard).
-	let { trips = allTrips }: { trips?: Trip[] } = $props();
+	// `markerLimit` acota cuántos marcadores/rutas se dibujan: con cientos de
+	// despachos (p. ej. la semana pico de ~700) miles de marcadores DOM
+	// congelarían el mapa. Los conteos de la leyenda siguen reflejando el total.
+	let { trips = allTrips, markerLimit = 60, collapsible = true }: { trips?: Trip[]; markerLimit?: number; collapsible?: boolean } = $props();
 	const mapTrips = trips;
 	const nacionales = mapTrips.filter(t => esNacional(t.origen, t.destino));
 	const internacionales = mapTrips.filter(t => !esNacional(t.origen, t.destino));
+	const mapTripsCapped = mapTrips.slice(0, markerLimit);
+	const markersCapped = mapTrips.length > mapTripsCapped.length;
 
 	let container: HTMLDivElement;
 	let mapCard: HTMLDivElement;
@@ -20,12 +25,20 @@
 	let mapInstance: maplibregl.Map | null = null;
 	let tripBounds: maplibregl.LngLatBounds | null = null;
 
+	// Pantalla completa sobre el contenedor padre (`.dash-layout__map`), no sólo
+	// la tarjeta del mapa: así el buscador superpuesto entra también en la vista
+	// ampliada (queda como hermano de la tarjeta dentro del mismo contenedor).
+	function fullscreenTarget(): HTMLElement | null {
+		return mapCard?.parentElement ?? mapCard ?? null;
+	}
+
 	async function toggleFullscreen() {
-		if (!mapCard) return;
+		const target = fullscreenTarget();
+		if (!target) return;
 		if (document.fullscreenElement) {
 			await document.exitFullscreen();
-		} else if (mapCard.requestFullscreen) {
-			await mapCard.requestFullscreen();
+		} else if (target.requestFullscreen) {
+			await target.requestFullscreen();
 		}
 	}
 
@@ -43,7 +56,7 @@
 	let mapFailed = $state(false);
 
 	function tripMarkerEl(trip: Trip, color: string, onActivate: () => void): HTMLElement {
-		const el = truckMarkerEl(trip.unidad, color);
+		const el = truckMarkerEl(trip.unidad, color, trip.estado !== 'en-retorno');
 		el.classList.add('tm-truck--clickable');
 		el.setAttribute('role', 'link');
 		el.setAttribute('tabindex', '0');
@@ -151,7 +164,8 @@
 
 	onMount(() => {
 		const handleFullscreenChange = () => {
-			isFullscreen = document.fullscreenElement === mapCard;
+			const fs = document.fullscreenElement;
+			isFullscreen = !!fs && (fs === mapCard || fs === mapCard?.parentElement);
 			requestAnimationFrame(() => mapInstance?.resize());
 		};
 		document.addEventListener('fullscreenchange', handleFullscreenChange);
@@ -161,7 +175,7 @@
 			return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
 		}
 
-		const routes = mapTrips
+		const routes = mapTripsCapped
 			.map(t => ({
 				trip: t,
 				from: CITY_INFO[t.origen]?.coords,
@@ -290,6 +304,15 @@
 			);
 		}
 
+		// Rótulo de placa sólo al acercar: de lejos, con cientos de unidades, los
+		// rótulos se encimarían y taparían los iconos. Bajo el umbral se muestra
+		// sólo el icono del camión; al hacer zoom aparece la placa.
+		const LABEL_ZOOM = 7.4;
+		const updateLabels = () => container.classList.toggle('tm-hide-labels', map.getZoom() < LABEL_ZOOM);
+		map.on('zoom', updateLabels);
+		map.on('load', updateLabels);
+		updateLabels();
+
 		return () => {
 			clearTimeout(failTimer);
 			activePopup?.remove();
@@ -327,14 +350,16 @@
 			</ul>
 		</div>
 	{:else}
-		<button
-			class="map-collapse"
-			onclick={() => collapsed = !collapsed}
-			aria-expanded={!collapsed}
-			aria-label={collapsed ? 'Expandir mapa' : 'Contraer mapa'}
-		>
-			<span class="icon" aria-hidden="true">{collapsed ? 'keyboard_arrow_down' : 'keyboard_arrow_up'}</span>
-		</button>
+		{#if collapsible}
+			<button
+				class="map-collapse"
+				onclick={() => collapsed = !collapsed}
+				aria-expanded={!collapsed}
+				aria-label={collapsed ? 'Expandir mapa' : 'Contraer mapa'}
+			>
+				<span class="icon" aria-hidden="true">{collapsed ? 'keyboard_arrow_down' : 'keyboard_arrow_up'}</span>
+			</button>
+		{/if}
 		<div class="map-controls" aria-label="Controles del mapa">
 			<button class="map-control" type="button" onclick={centerTrips} aria-label="Centrar mapa en todos los viajes" title="Centrar mapa en todos los viajes">
 				<span class="icon" aria-hidden="true">my_location</span>
@@ -368,6 +393,13 @@
 			<span class="map-legend__dot" style="background:{COLOR_INTERNACIONAL}"></span>
 			Internacionales ({internacionales.length})
 		</span>
+		{#if markersCapped}
+			<button class="map-legend__note tooltip-trigger" type="button" aria-label="Detalle de unidades mostradas en el mapa">
+				<span class="icon icon--sm" aria-hidden="true">info</span>
+				<span class="map-legend__note-text">{mapTripsCapped.length} de {mapTrips.length} en el mapa</span>
+				<span class="tooltip-bubble">Con mucha carga, el mapa dibuja {mapTripsCapped.length} de {mapTrips.length} unidades para no perder rendimiento. El resto sigue contando en la lista y los indicadores.</span>
+			</button>
+		{/if}
 	</div>
 </div>
 
@@ -505,8 +537,8 @@
 	/* ── Leyenda (Figma 218:596) ── */
 	.map-legend {
 		position: absolute;
-		top: 16px;
-		left: 75px;
+		bottom: 16px;
+		left: 16px;
 		display: flex;
 		align-items: center;
 		gap: var(--space-8);
@@ -530,6 +562,37 @@
 		gap: 6px;
 		white-space: nowrap;
 	}
+	.map-legend__note {
+		display: inline-flex;
+		align-items: center;
+		gap: 4px;
+		margin-left: calc(-1 * var(--space-8) + var(--space-3));
+		padding: 2px var(--space-3);
+		border: 0;
+		border-left: 1px solid var(--blue-light-active);
+		background: transparent;
+		color: var(--grey-muted);
+		font: 600 var(--text-xs) var(--font-body);
+		white-space: nowrap;
+		cursor: pointer;
+		border-radius: 0;
+	}
+	.map-legend__note:hover { color: var(--blue-dark); }
+	.map-legend__note:focus-visible { outline: 2px solid var(--blue-normal); outline-offset: 2px; }
+	.map-legend__note .icon { font-size: 14px; }
+	/* La leyenda va al pie del mapa: el globo del tooltip aparece ARRIBA (default). */
+	.map-legend__note .tooltip-bubble {
+		white-space: normal;
+		width: max-content;
+		max-width: 240px;
+		text-transform: none;
+		font-weight: 600;
+	}
+	/* Vista angosta: se oculta el texto; el icono + globo conservan el dato. */
+	@media (max-width: 860px) {
+		.map-legend__note-text { display: none; }
+		.map-legend__note { margin-left: 0; }
+	}
 	.map-legend__dot {
 		width: 8px;
 		height: 8px;
@@ -548,7 +611,7 @@
 		.map-card { height: 420px; }
 		.map-el { height: 420px; }
 		.map-legend {
-			top: 71px;
+			bottom: 16px;
 			left: 16px;
 			right: 16px;
 			gap: var(--space-4);

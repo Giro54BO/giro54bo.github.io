@@ -47,6 +47,23 @@
 		return EVENT_COLOR[e.tipo];
 	}
 
+	// ── Tiempo en cada estado de la línea de tiempo ──
+	// Estados de detención (carga, descanso, frontera, descarga). El estado
+	// ACTUAL del despacho usa el `tiempoEnEstado` real (coincide con las
+	// tarjetas); los pasados usan la duración precalculada del evento. No aplica
+	// a hitos de paso (Salida, Control en ruta, Recepción, Alerta) ni al Destino.
+	const ESTADO_A_TIPO: Partial<Record<TripState, TripEvent['tipo']>> = {
+		'en-carga': 'carga', 'en-descarga': 'descarga', 'en-frontera': 'frontera',
+	};
+	function duracionEnEstado(eventos: TripEvent[], i: number): string | null {
+		const ev = eventos[i];
+		const esUltimoDeTipo = !eventos.slice(i + 1).some((e) => e.tipo === ev.tipo);
+		if (ESTADO_A_TIPO[trip.estado] === ev.tipo && esUltimoDeTipo) {
+			return trip.tiempoEnEstado || null;
+		}
+		return ev.duracion ?? null;
+	}
+
 	// Icono de la geocerca de destino (último checkpoint): almacén, puerto, etc.
 	const destinoIcon = $derived(
 		GEOCERCA_ICONS[GEOCERCAS[trip.geocercasRuta[trip.geocercasRuta.length - 1]]?.tipo] ?? 'flag'
@@ -482,6 +499,7 @@
 				<ol class="timeline" aria-label="Historial de eventos del despacho">
 					{#each trip.eventos as evento, i (evento.id)}
 						{@const isLast = i === trip.eventos.length - 1}
+						{@const duracion = duracionEnEstado(trip.eventos, i)}
 						<li class="timeline__item">
 							<div class="timeline__connector" aria-hidden="true">
 								<div class="timeline__dot timeline__dot--{eventColor(evento)}" class:timeline__dot--pulse={isLast && (trip.estado === 'incidencia' || trip.estado === 'en-frontera')}>
@@ -496,7 +514,13 @@
 										{evento.titulo}
 									</p>
 								</div>
-								{#if evento.geocerca}
+								{#if duracion}
+										<span class="timeline__duracion">
+											<span class="icon icon--sm" aria-hidden="true">timer</span>
+											Tiempo en este estado: <strong>{duracion}</strong>
+										</span>
+									{/if}
+									{#if evento.geocerca}
 									{@const zona = GEOCERCAS[evento.geocerca]}
 									<span class="tag-geocerca timeline__geocerca" title="Evento detectado automáticamente por la geocerca «{zona?.nombre}»">
 										<span class="icon tag-geocerca__icon" aria-hidden="true">my_location</span>
@@ -1370,10 +1394,12 @@
 
 	/* ── Cards ── */
 	.card {
-		background: var(--surface);
-		border-radius: 20px;
+		background: var(--surface-card);
+		border-radius: var(--radius-xl);
 		padding: var(--space-5);
-		box-shadow: 0 1px 1.5px rgba(7, 20, 23, 0.08);
+		/* Mismo borde (anillo interior) y sombra que las tarjetas de métricas
+		   del dashboard (.pred-card). */
+		box-shadow: inset 0 0 0 1px var(--border-default), var(--shadow-card);
 	}
 	.card__title {
 		display: flex;
@@ -1508,6 +1534,19 @@
 		overflow-wrap: anywhere;
 	}
 	.timeline__location .icon { flex-shrink: 0; }
+	.timeline__duracion {
+		display: inline-flex;
+		align-items: center;
+		gap: 4px;
+		width: fit-content;
+		max-width: 100%;
+		margin-top: var(--space-1);
+		font-size: var(--text-sm);
+		color: var(--grey-muted);
+		white-space: nowrap;
+	}
+	.timeline__duracion .icon { flex-shrink: 0; font-size: 16px; color: var(--blue-dark); }
+	.timeline__duracion strong { color: var(--grey-dark); font-weight: 700; }
 	.timeline__desc {
 		font-size: var(--text-sm);
 		font-weight: 500;
@@ -1544,10 +1583,10 @@
 	/* ── Stat cards ── */
 	/* ── Control de recepción (comparación despacho vs recibido) ── */
 	.recep-card {
-		background: var(--surface);
-		border-radius: 20px;
+		background: var(--surface-card);
+		border-radius: var(--radius-xl);
 		padding: var(--space-4) var(--space-5);
-		box-shadow: 0 1px 1.5px rgba(7, 20, 23, 0.08);
+		box-shadow: inset 0 0 0 1px var(--border-default), var(--shadow-card);
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-3);
@@ -1633,10 +1672,10 @@
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-1);
-		background: var(--surface);
-		border-radius: 20px;
+		background: var(--surface-card);
+		border-radius: var(--radius-xl);
 		padding: var(--space-4) var(--space-5);
-		box-shadow: 0 1px 1.5px rgba(7, 20, 23, 0.08);
+		box-shadow: inset 0 0 0 1px var(--border-default), var(--shadow-card);
 	}
 	.stat-card__title {
 		display: flex;
@@ -1714,17 +1753,19 @@
 		min-height: 40px;
 		padding: 0 var(--space-4);
 		border: 1.5px solid var(--blue-dark);
-		border-radius: var(--radius-md);
+		border-radius: var(--radius-lg);
 		background: transparent;
 		font: inherit;
 		font-size: var(--text-sm);
 		font-weight: 700;
+		letter-spacing: 0.01em;
+		text-transform: uppercase;
 		color: var(--blue-dark);
 		cursor: pointer;
 		white-space: nowrap;
 		transition: background var(--duration-fast) var(--ease-out-quart);
 	}
-	.btn-nueva-inc:hover { background: var(--teal-50); }
+	.btn-nueva-inc:hover { background: var(--blue-lighter); }
 	.btn-nueva-inc:focus-visible { outline: 2px solid var(--blue-dark); outline-offset: 2px; }
 	.btn-nueva-inc .icon { font-size: 18px; }
 	/* Deshabilitado: despacho que ya llegó a destino. */
@@ -1746,7 +1787,7 @@
 		color: var(--ink-4);
 		text-align: center;
 		background: var(--surface);
-		border-radius: 20px;
+		border-radius: var(--radius-xl);
 	}
 	.notif-empty p { font-size: var(--text-sm); }
 
@@ -1758,9 +1799,10 @@
 	}
 
 	.notif-card {
-		background: var(--surface);
-		border: 1px solid var(--grey-light);
-		border-radius: 20px;
+		background: var(--surface-card);
+		border: 0;
+		border-radius: var(--radius-xl);
+		box-shadow: inset 0 0 0 1px var(--border-default), var(--shadow-card);
 		padding: 17px;
 		display: flex;
 		flex-direction: column;
@@ -1823,6 +1865,8 @@
 		font-family: inherit;
 		font-size: var(--text-sm);
 		font-weight: 700;
+		letter-spacing: 0.01em;
+		text-transform: uppercase;
 		cursor: pointer;
 		white-space: nowrap;
 		transition: background var(--duration-fast) var(--ease-out-quart);
@@ -1843,7 +1887,7 @@
 		color: var(--blue-dark);
 		border: 1.5px solid var(--blue-dark);
 	}
-	.btn-resolver:hover { background: var(--teal-50); }
+	.btn-resolver:hover { background: var(--blue-lighter); }
 	.btn-resolver:focus-visible { outline: 2px solid var(--blue-dark); outline-offset: 2px; }
 
 	/* ── Resolver incidencia ──────────────────────────────────────────── */
@@ -1854,14 +1898,14 @@
 		display: grid;
 		place-items: center;
 		padding: var(--space-4);
-		background: rgba(7, 20, 23, 0.42);
+		background: var(--backdrop);
 	}
 	.resolution-modal {
 		width: min(100%, 520px);
 		background: var(--surface);
-		border-radius: 20px;
+		border-radius: var(--radius-xl);
 		padding: var(--space-6);
-		box-shadow: 0 16px 40px rgba(7, 20, 23, 0.2);
+		box-shadow: var(--shadow-overlay);
 	}
 	.resolution-modal__header {
 		display: flex;

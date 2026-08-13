@@ -530,14 +530,14 @@
 	/* ── Tarjetas de sección ── */
 	.card {
 		border: 1px solid var(--border);
-		border-radius: 20px;
+		border-radius: var(--radius-xl);
 		background: var(--surface);
 		padding: var(--space-5) var(--space-6) var(--space-6);
 		margin: 0;
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-4);
-		box-shadow: 0 1px 1.5px rgba(7, 20, 23, 0.08);
+		box-shadow: var(--shadow-elev);
 	}
 	.card--error { border-color: var(--error-ink); }
 	.card__legend {
@@ -759,10 +759,10 @@
 	/* ── Resumen ── */
 	.summary {
 		border: 1px solid var(--border);
-		border-radius: 20px;
+		border-radius: var(--radius-xl);
 		background: var(--surface);
 		padding: var(--space-5) var(--space-6);
-		box-shadow: 0 1px 1.5px rgba(7, 20, 23, 0.08);
+		box-shadow: var(--shadow-elev);
 	}
 	.summary__title {
 		font-family: var(--font-display);
@@ -827,16 +827,18 @@
 		gap: var(--space-2);
 		min-height: 40px;
 		padding: 0 var(--space-6);
-		border-radius: var(--radius-md);
+		border-radius: var(--radius-lg);
 		font: inherit;
 		font-size: var(--text-sm);
 		font-weight: 700;
+		letter-spacing: 0.01em;
+		text-transform: uppercase;
 		cursor: pointer;
 	}
 	.btn-ghost { border: 1px solid var(--grey-light); background: var(--surface); color: var(--grey-dark); }
 	.btn-ghost:hover { background: var(--grey-lighter, var(--surface-2)); }
-	.btn-primary { border: 1px solid var(--blue-dark); background: var(--blue-dark); color: white; }
-	.btn-primary:hover { background: var(--teal-700, var(--blue-dark)); }
+	.btn-primary { border: 0; background: var(--color-primary); color: var(--color-on-primary); }
+	.btn-primary:hover { background: var(--color-primary-hover); }
 	.btn-primary:disabled { opacity: 0.7; cursor: progress; }
 	.btn-ghost:focus-visible,
 	.btn-primary:focus-visible { outline: 2px solid var(--blue-dark); outline-offset: 2px; }
@@ -844,8 +846,8 @@
 	.spinner {
 		width: 14px;
 		height: 14px;
-		border: 2px solid oklch(1 0 0 / 0.4);
-		border-top-color: white;
+		border: 2px solid color-mix(in oklch, var(--color-on-primary) 30%, transparent);
+		border-top-color: var(--color-on-primary);
 		border-radius: 50%;
 		animation: spin 0.7s linear infinite;
 	}
@@ -860,14 +862,14 @@
 		display: grid;
 		place-items: center;
 		padding: var(--space-4);
-		background: rgba(7, 20, 23, 0.42);
+		background: var(--backdrop);
 	}
 	.confirm-modal {
 		width: min(100%, 520px);
 		background: var(--surface);
-		border-radius: 20px;
+		border-radius: var(--radius-xl);
 		padding: var(--space-6);
-		box-shadow: 0 16px 40px rgba(7, 20, 23, 0.2);
+		box-shadow: var(--shadow-overlay);
 	}
 	.confirm-success { text-align: center; }
 	.confirm-success__icon {

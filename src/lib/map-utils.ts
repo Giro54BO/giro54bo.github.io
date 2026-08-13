@@ -85,15 +85,18 @@ export function endpointMarkerEl(name: string, icon: string): HTMLElement {
 	return el;
 }
 
-export function truckMarkerEl(unidad: string, color: string): HTMLElement {
+export function truckMarkerEl(unidad: string, color: string, flip = false): HTMLElement {
 	const el = document.createElement('div');
 	el.className = 'tm-truck';
 	el.style.setProperty('--tm-color', color);
 	// El punto de posición usa el mismo icono que acompaña a la Placa (vehId),
 	// relleno. Como el punto ya lleva ese icono, la etiqueta ya no lo repite.
+	// `flip` voltea el camión hacia el oeste, en el sentido de marcha hacia el
+	// destino (Bolivia → Pacífico). Las unidades en retorno ("Disponible") no se
+	// voltean y miran al este, de regreso.
 	el.innerHTML =
 		`<span class="tm-truck__pulse"></span>` +
-		`<span class="icon tm-truck__pin">local_shipping</span>` +
+		`<span class="icon tm-truck__pin${flip ? ' tm-truck__pin--flip' : ''}">local_shipping</span>` +
 		`<span class="tm-truck__label">${unidad}</span>`;
 	return el;
 }

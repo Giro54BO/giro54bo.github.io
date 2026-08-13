@@ -4,7 +4,7 @@
 	const hasFilters = $derived(
 		!!(
 			filtros.producto || filtros.cliente || filtros.transportista ||
-			filtros.origen.length || filtros.destino.length || filtros.estado
+			filtros.origen.length || filtros.destino.length || filtros.estado.length
 		) || filtros.fecha !== PERIODO_POR_DEFECTO
 	);
 </script>

@@ -13,7 +13,7 @@
 	// real (todos coinciden con algún campo). El destello recorre el ejemplo.
 	const EJEMPLOS = [
 		{ param: 'despacho',       ejemplo: 'PEWDSP206746' },
-		{ param: 'unidad',         ejemplo: '794UTB' },
+		{ param: 'placa del vehículo', ejemplo: '794UTB' },
 		{ param: 'transportadora', ejemplo: 'EMPRESA EL PORVENIR' },
 		{ param: 'producto',       ejemplo: 'TORTA DE SOYA' },
 		{ param: 'origen',         ejemplo: 'Oruro' },

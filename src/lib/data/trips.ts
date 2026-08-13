@@ -1,3 +1,5 @@
+import { GEOCERCAS } from './geo';
+
 export type TripState =
 	| 'en-carga'
 	| 'en-transito'
@@ -15,6 +17,9 @@ export interface TripEvent {
 	ubicacion?: string;
 	/** Id de GEOCERCAS si el evento lo generó una geocerca (entrada/salida o alerta por excepción). */
 	geocerca?: string;
+	/** Tiempo que la unidad pasó en este estado (sólo estados de detención:
+	 *  carga, descanso, frontera, descarga). Lo asigna `conDuraciones`. */
+	duracion?: string;
 }
 
 /**
@@ -854,10 +859,12 @@ const rawTrips: Trip[] = [
 
 // Keep the demo's operational dates aligned with the current week without
 // changing the relative timing between trips, ETAs, geofences, and events.
+// +14 días (2 semanas): las fechas base de julio caen sobre la semana en curso,
+// de modo que los despachos activos (raw 27–29 jul) quedan en "esta semana".
 function shiftDemoDates(value: unknown): unknown {
 	if (typeof value === 'string') {
 		const shift = (day: number, month: number, year: number) => {
-			const date = new Date(year, month, day + 7);
+			const date = new Date(year, month, day + 14);
 			return { day: date.getDate(), month: date.getMonth(), year: date.getFullYear() };
 		};
 
@@ -898,11 +905,248 @@ function applyRealisticRouteTiming(trip: Trip): Trip {
 	return { ...trip, distancia: `${distance} | ${timing.duration}`, etaRecorrido: timing.range };
 }
 
-export const trips: Trip[] = rawTrips
-	.map((trip) => shiftDemoDates(trip) as Trip)
-	.map(applyRealisticRouteTiming);
+// ────────────────────────────────────────────────────────────────────────────
+// Prueba de estrés — flota sintética de la semana pico
+// El cliente reporta ~700 despachos en tránsito por semana. Estos viajes
+// sintéticos reproducen ese volumen para evaluar el rendimiento y la UI a
+// escala. Sus fechas base (jul) pasan por shiftDemoDates y caen en la semana en
+// curso. Ponga STRESS_TRIP_COUNT en 0 para volver a la flota base.
+// ────────────────────────────────────────────────────────────────────────────
+export const STRESS_TRIP_COUNT = 700;
 
-export const alertas: Alerta[] = [
+type StressRoute = {
+	origen: string; destino: string; rutaCodigo: string; rutaNombre: string;
+	planta: string; prefijo: string; km: string;
+	geocercasRuta: string[]; frontera?: string; destinoZona: string;
+	/** Índice de la frontera en `ciudades`/`coords` (−1 si el corredor es doméstico). */
+	fronteraIdx: number;
+	ciudades: string[]; coords: [number, number][];
+};
+
+const STRESS_ROUTES: StressRoute[] = [
+	{ origen: 'Warnes', destino: 'Arequipa', rutaCodigo: 'BPAREQ', rutaNombre: 'BO - PDF - AREQUIPA', planta: 'Planta de extracción Warnes Don Felipe', prefijo: 'PEWDSP', km: '1.150 km',
+		geocercasRuta: ['planta-warnes', 'frontera-desaguadero', 'cd-arequipa'], frontera: 'frontera-desaguadero', destinoZona: 'cd-arequipa', fronteraIdx: 3,
+		ciudades: ['Cochabamba, Bolivia', 'Caracollo, Bolivia', 'Patacamaya, Bolivia', 'Desaguadero, frontera BO–PE', 'Puno, Perú', 'Arequipa, Perú'],
+		coords: [[-17.39, -66.16], [-17.66, -67.19], [-17.24, -67.92], [-16.56, -69.04], [-15.84, -70.02], [-16.41, -71.54]] },
+	{ origen: 'Oruro', destino: 'Arica', rutaCodigo: 'BOARIC', rutaNombre: 'BO - ORURO - ARICA', planta: 'Oruro', prefijo: 'ORUDSP', km: '432 km',
+		geocercasRuta: ['planta-oruro', 'frontera-tambo-quemado', 'puerto-arica'], frontera: 'frontera-tambo-quemado', destinoZona: 'puerto-arica', fronteraIdx: 3,
+		ciudades: ['Oruro, Bolivia', 'Toledo, Bolivia', 'Pisiga, frontera BO–CL', 'Tambo Quemado, frontera BO–CL', 'Putre, Chile', 'Arica, Chile'],
+		coords: [[-17.98, -67.15], [-18.02, -67.36], [-19.19, -68.66], [-18.27, -68.47], [-18.20, -69.56], [-18.48, -70.31]] },
+	{ origen: 'El Alto', destino: 'Ilo', rutaCodigo: 'BEILO', rutaNombre: 'BO - EL ALTO - ILO', planta: 'Planta La Paz - El Alto', prefijo: 'PLPDSP', km: '537 km',
+		geocercasRuta: ['planta-el-alto', 'frontera-desaguadero', 'puerto-ilo'], frontera: 'frontera-desaguadero', destinoZona: 'puerto-ilo', fronteraIdx: 2,
+		ciudades: ['El Alto, Bolivia', 'Viacha, Bolivia', 'Desaguadero, frontera BO–PE', 'Moquegua, Perú', 'Ilo, Perú'],
+		coords: [[-16.50, -68.16], [-16.65, -68.30], [-16.56, -69.04], [-17.19, -70.93], [-17.64, -71.34]] },
+	{ origen: 'Warnes', destino: 'La Paz', rutaCodigo: 'BPLPZ', rutaNombre: 'BO - PDF - LA PAZ', planta: 'Planta de extracción Warnes Don Felipe', prefijo: 'PEWDSP', km: '873 km',
+		geocercasRuta: ['planta-warnes', 'cd-la-paz'], destinoZona: 'cd-la-paz', fronteraIdx: -1,
+		ciudades: ['Cochabamba, Bolivia', 'Caracollo, Bolivia', 'Patacamaya, Bolivia', 'El Alto, Bolivia', 'La Paz, Bolivia'],
+		coords: [[-17.39, -66.16], [-17.66, -67.19], [-17.24, -67.92], [-16.50, -68.16], [-16.50, -68.12]] },
+];
+
+const STRESS_CARRIERS = [
+	{ nombre: 'COOPERATIVA DE TRANSPORTE DE', nit: '182078028' },
+	{ nombre: 'EMPRESA EL PORVENIR Ltda.', nit: '1020681028' },
+	{ nombre: 'CECILUNA TRANSPORTES S.R.L.', nit: '164902024' },
+	{ nombre: 'TRANSPORTES FUENTES SRL.', nit: '318273027' },
+	{ nombre: 'INTERNAL. SERVICIO DE TRANSPORTE', nit: '279013025' },
+	{ nombre: 'TRANSNOTEYSUR S.R.L.', nit: '204517026' },
+];
+const STRESS_PRODUCTS = [
+	{ carga: 'ACEITE DE SOYA', materialId: '000000000009910412' },
+	{ carga: 'TORTA DE SOYA A GRANEL - HI PRO', materialId: '000000000009910975' },
+];
+
+/** PRNG determinista (LCG) — builds estables entre recargas. */
+function makeRng(seed: number) {
+	let s = seed >>> 0;
+	return () => { s = (Math.imul(s, 1103515245) + 12345) >>> 0; return s / 0xffffffff; };
+}
+
+function generateStressTrips(count: number): Trip[] {
+	if (count <= 0) return [];
+	const rng = makeRng(20260812);
+	const pick = <T,>(a: T[]): T => a[Math.floor(rng() * a.length)];
+	const pad = (n: number, len: number) => String(n).padStart(len, '0');
+	const kg = (n: number) => `${Math.floor(n / 1000)}.${pad(n % 1000, 3)} kg`;
+	const L = 'ABCDEFGHJKLMNPQRSTUVWXYZ'.split('');
+	const dias = ['27', '28', '29'];
+	const cerradores = ['wmoza', 'jlara', 'rvilla', 'mcondori', 'aquispe'];
+	// coords del template = [lat, lng]; los centros de GEOCERCAS = [lng, lat].
+	const zonaPos = (zoneId: string): { lat: number; lng: number } => {
+		const c = GEOCERCAS[zoneId]?.centro;
+		return c ? { lat: c[1], lng: c[0] } : { lat: 0, lng: 0 };
+	};
+	const jitter = (v: number) => +(v + (rng() - 0.5) * 0.05).toFixed(4);
+	const out: Trip[] = [];
+
+	for (let i = 0; i < count; i++) {
+		const r = pick(STRESS_ROUTES);
+		const tieneFrontera = r.fronteraIdx >= 0;
+		const lastIdx = r.coords.length - 1;
+		const originZone = r.geocercasRuta[0];
+		const dia = dias[Math.floor(rng() * dias.length)];
+		const etaHH = pad(12 + Math.floor(rng() * 8), 2);
+		const id = `${r.prefijo}${pad(300000 + i, 6)}`;
+
+		// Etapa del viaje → estado. Posición, geocerca, ubicación y eventos se
+		// derivan de la MISMA etapa para que el mapa, el itinerario y la línea de
+		// tiempo cuenten la misma historia.
+		let estado: TripState;
+		const roll = rng();
+		if (roll < 0.03) estado = 'incidencia';
+		else if (roll < 0.09) estado = 'en-descarga';
+		else if (roll < 0.17) estado = 'en-carga';
+		else if (roll < 0.24 && tieneFrontera) estado = 'en-frontera';
+		else estado = 'en-transito';
+
+		let posLat: number;
+		let posLng: number;
+		let ubicacion: string;
+		let geocerca: TripGeocerca;
+		let pasoFrontera = false;
+
+		if (estado === 'en-carga') {
+			const p = zonaPos(originZone);
+			posLat = jitter(p.lat); posLng = jitter(p.lng);
+			ubicacion = `${r.origen}, Bolivia`;
+			geocerca = { estado: 'dentro', actual: originZone, desde: `${dia} Jul. 0${2 + Math.floor(rng() * 6)}:15`, tiempoDentro: `${20 + Math.floor(rng() * 39)}min` };
+		} else if (estado === 'en-frontera') {
+			const [la, ln] = r.coords[r.fronteraIdx];
+			posLat = jitter(la); posLng = jitter(ln);
+			ubicacion = r.ciudades[r.fronteraIdx];
+			geocerca = { estado: 'dentro', actual: r.frontera!, desde: `${dia} Jul. ${etaHH}:10`, tiempoDentro: `${1 + Math.floor(rng() * 4)}h ${pad(Math.floor(rng() * 59), 2)}min` };
+		} else if (estado === 'en-descarga') {
+			const [la, ln] = r.coords[lastIdx];
+			posLat = jitter(la); posLng = jitter(ln);
+			ubicacion = r.ciudades[lastIdx];
+			pasoFrontera = tieneFrontera;
+			geocerca = { estado: 'dentro', actual: r.destinoZona, desde: `${dia} Jul. ${etaHH}:00`, tiempoDentro: `${10 + Math.floor(rng() * 49)}min` };
+		} else {
+			// en-transito / incidencia → un punto entre nodos, antes o después de
+			// la frontera (si el corredor la tiene).
+			const post = tieneFrontera ? rng() < 0.5 : true;
+			let idx: number;
+			if (tieneFrontera && !post) {
+				idx = Math.floor(rng() * r.fronteraIdx); // planta → frontera
+			} else if (tieneFrontera) {
+				const lo = r.fronteraIdx + 1;
+				idx = lo + Math.floor(rng() * Math.max(1, lastIdx - lo)); // frontera → destino
+				pasoFrontera = true;
+			} else {
+				idx = Math.floor(rng() * lastIdx); // corredor doméstico
+			}
+			const [la, ln] = r.coords[idx];
+			posLat = jitter(la); posLng = jitter(ln);
+			ubicacion = r.ciudades[idx];
+			const proxima = pasoFrontera || !tieneFrontera ? r.destinoZona : r.frontera!;
+			geocerca = { estado: 'en-ruta', proxima, etaProxima: `${dia} Jul. ${etaHH}:30` };
+		}
+
+		// ── Eventos coherentes con la etapa alcanzada ──
+		let evH = 5 + Math.floor(rng() * 4);
+		const evTs = () => { const t = `${dia} jul, ${pad(Math.min(evH, 23), 2)}:${pad(Math.floor(rng() * 59), 2)}`; evH += 2 + Math.floor(rng() * 3); return t; };
+		const eventos: TripEvent[] = [
+			{ id: `${id}-e1`, timestamp: evTs(), tipo: 'carga', titulo: 'Inicio de carga', ubicacion: `${r.origen}, Bolivia`, geocerca: originZone },
+		];
+		if (estado !== 'en-carga') {
+			eventos.push({ id: `${id}-e2`, timestamp: evTs(), tipo: 'inicio', titulo: 'Salida de planta', ubicacion: `${r.origen}, Bolivia` });
+		}
+		if (estado === 'en-frontera') {
+			eventos.push({ id: `${id}-e3`, timestamp: evTs(), tipo: 'frontera', titulo: 'Llegada a frontera', ubicacion: r.ciudades[r.fronteraIdx], geocerca: r.frontera });
+		} else if (pasoFrontera && r.frontera) {
+			eventos.push({ id: `${id}-e3`, timestamp: evTs(), tipo: 'frontera', titulo: 'Cruce de frontera completado', ubicacion: r.ciudades[r.fronteraIdx], geocerca: r.frontera });
+		}
+		if (estado === 'en-descarga') {
+			eventos.push({ id: `${id}-e4`, timestamp: evTs(), tipo: 'descarga', titulo: 'Llegada a destino e inicio de descarga', ubicacion: r.ciudades[lastIdx], geocerca: r.destinoZona });
+		}
+		if (estado === 'incidencia') {
+			eventos.push({ id: `${id}-inc`, timestamp: evTs(), tipo: 'incidencia', titulo: 'Incidente', descripcion: 'Falla mecánica reportada. Vehículo detenido en vía. Servicio técnico en camino.', ubicacion });
+		}
+
+		const carrier = pick(STRESS_CARRIERS);
+		const prod = pick(STRESS_PRODUCTS);
+		const neto = 26800 + Math.floor(rng() * 2800);
+		const placa = `${pad(1000 + Math.floor(rng() * 8999), 4)}${pick(L)}${pick(L)}${pick(L)}`;
+		const gps = rng() > 0.06;
+		const hh = pad(6 + Math.floor(rng() * 12), 2);
+
+		out.push({
+			id,
+			unidad: placa,
+			placa,
+			tipoVehiculo: 'Remolque',
+			conductor: pad(3000000 + Math.floor(rng() * 6999999), 7),
+			transportista: carrier.nombre,
+			nit: carrier.nit,
+			origen: r.origen,
+			destino: r.destino,
+			rutaCodigo: r.rutaCodigo,
+			rutaNombre: r.rutaNombre,
+			planta: r.planta,
+			estado,
+			tiempoEnEstado: `${Math.floor(rng() * 9)}h ${pad(Math.floor(rng() * 59), 2)}min`,
+			ultimaUbicacion: ubicacion,
+			ultimaActualizacion: `hace ${1 + Math.floor(rng() * 45)} min`,
+			carga: prod.carga,
+			materialId: prod.materialId,
+			pesoIngreso: kg(14980),
+			pesoSalida: kg(14980 + neto),
+			pesoNeto: kg(neto),
+			distancia: r.km,
+			fechaDocumentada: `${dia}/Jul/2026`,
+			fechaSalida: `${dia} jul 2026, ${hh}:00`,
+			gps,
+			etaOriginal: `31 Jul. ${pad(8 + Math.floor(rng() * 10), 2)}:00`,
+			etaActual: `31 Jul. ${pad(9 + Math.floor(rng() * 11), 2)}:30`,
+			cumpleEtaIdeal: rng() > 0.4,
+			precinto: `BO${pad(7000000 + Math.floor(rng() * 999999), 7)}`,
+			cerradoPor: pick(cerradores),
+			geocerca,
+			geocercasRuta: r.geocercasRuta,
+			sap: {
+				pedido: pad(6012800000 + Math.floor(rng() * 99999), 10),
+				salidaMercancia: pad(819352000 + Math.floor(rng() * 9999), 10),
+				numeroTransporte: pad(7767000 + Math.floor(rng() * 9999), 10),
+				cliCodigo: pad(458200 + Math.floor(rng() * 199), 10),
+				cenCodigo: 'B419',
+			},
+			urgente: estado === 'incidencia' || rng() < 0.04,
+			coordenadas: { lat: posLat, lng: posLng },
+			eventos,
+		});
+	}
+	return out;
+}
+
+// Tiempo que la unidad pasó en cada estado de detención, por título de evento.
+// El estado ACTUAL del despacho no se fija aquí: la vista de detalle lo
+// sustituye por `tiempoEnEstado` real (coincide con las tarjetas). Los hitos de
+// paso (Salida de planta, Control en ruta, Recepción, Alerta) no llevan tiempo.
+const DURACION_POR_TITULO: Record<string, string> = {
+	'Inicio de carga': '2h 10min',
+	'Descanso': '45min',
+	'Llegada a frontera': '38min',
+	'Cruce de frontera completado': '1h 15min',
+	'Llegada a destino e inicio de descarga': '32min',
+};
+function conDuraciones(trip: Trip): Trip {
+	const tieneLlegadaFrontera = trip.eventos.some((e) => e.titulo === 'Llegada a frontera');
+	return {
+		...trip,
+		eventos: trip.eventos.map((e) => {
+			// Evita duplicar el tiempo de frontera cuando existen ambos hitos.
+			if (e.titulo === 'Cruce de frontera completado' && tieneLlegadaFrontera) return e;
+			const d = DURACION_POR_TITULO[e.titulo];
+			return d ? { ...e, duracion: d } : e;
+		}),
+	};
+}
+
+export const trips: Trip[] = [...rawTrips, ...generateStressTrips(STRESS_TRIP_COUNT)]
+	.map((trip) => shiftDemoDates(trip) as Trip)
+	.map(applyRealisticRouteTiming)
+	.map(conDuraciones);
+
+const baseAlertas: Alerta[] = [
 	{
 		id: 'A-001',
 		tripId: 'PEWDSP206746',
@@ -935,6 +1179,60 @@ export const alertas: Alerta[] = [
 		tiempo: 'hace 42 min',
 	},
 ];
+
+// Prueba de estrés — incidencias en volumen. Con cientos de alertas la vista de
+// tarjetas deja de escalar: por eso Incidencias pasa a tabla (con búsqueda y
+// chips por tipo). Ponga STRESS_INC_COUNT en 0 para volver a las 4 base.
+export const STRESS_INC_COUNT = 140;
+
+function generateStressIncidencias(pool: Trip[], count: number): Alerta[] {
+	if (count <= 0 || pool.length === 0) return [];
+	const rng = makeRng(76543210);
+	const pick = <T,>(a: T[]): T => a[Math.floor(rng() * a.length)];
+	const tipos: AlertaTipo[] = ['critico', 'critico', 'retraso', 'retraso', 'retraso', 'parada', 'parada', 'desvio'];
+	const plantillas: Record<AlertaTipo, string[]> = {
+		critico: [
+			'Falla mecánica reportada. Vehículo detenido en {loc}.',
+			'Accidente de tránsito en {loc}. Unidad inmovilizada.',
+			'Reventón de neumático cerca de {loc}. Atención en sitio.',
+		],
+		retraso: [
+			'Tiempo en frontera supera el umbral esperado en {loc}.',
+			'Demora en trámite aduanero en {loc}.',
+			'Retraso por congestión vehicular cerca de {loc}.',
+		],
+		parada: [
+			'Unidad en espera de carga por más de 1h en {loc}.',
+			'Parada obligatoria prolongada en {loc}.',
+			'Unidad detenida sin novedad reportada en {loc}.',
+		],
+		desvio: [
+			'Bloqueo en la ruta hacia {loc}. Desvío en coordinación.',
+			'Desvío por corte de vía cerca de {loc}.',
+			'Ruta alterna activada por manifestación en {loc}.',
+		],
+	};
+	const globalLocs = ['Desaguadero', 'Tambo Quemado', 'Patacamaya', 'Cochabamba', 'Oruro'];
+	const out: Alerta[] = [];
+	for (let i = 0; i < count; i++) {
+		const tipo = pick(tipos);
+		const trip = rng() < 0.08 ? null : pick(pool);
+		const loc = trip ? trip.ultimaUbicacion : pick(globalLocs);
+		const min = 2 + Math.floor(rng() * 340);
+		const tiempo = min < 60 ? `hace ${min} min` : `hace ${Math.floor(min / 60)} h ${min % 60} min`;
+		out.push({
+			id: `SIM-${String(i + 1).padStart(4, '0')}`,
+			tripId: trip?.id,
+			unidad: trip?.unidad,
+			tipo,
+			mensaje: pick(plantillas[tipo]).replace('{loc}', loc),
+			tiempo,
+		});
+	}
+	return out;
+}
+
+export const alertas: Alerta[] = [...baseAlertas, ...generateStressIncidencias(trips, STRESS_INC_COUNT)];
 
 export function getStateCounts(list: Trip[]) {
 	return {

@@ -48,8 +48,13 @@
 	@media (min-width: 1536px) {
 		.shell { max-width: 1536px; }
 	}
+	@media (min-width: 1728px) {
+		.shell { max-width: 1680px; }
+	}
+	/* Grandes monitores (1920): la superficie de trabajo aprovecha el ancho —
+	   mapa, tarjetas y tabla crecen en proporción, manteniendo las 3 columnas. */
 	@media (min-width: 1920px) {
-		.shell { max-width: 1800px; }
+		.shell { max-width: 1880px; }
 	}
 
 	.shell__main {

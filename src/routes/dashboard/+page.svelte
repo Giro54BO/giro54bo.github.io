@@ -3,56 +3,61 @@
   import PredictionCards from '$lib/components/PredictionCards.svelte';
   import SearchEmptyState from '$lib/components/SearchEmptyState.svelte';
   import DashFilters from '$lib/components/DashFilters.svelte';
-  import StatusChips from '$lib/components/StatusChips.svelte';
-  import FilterSectionHeader from '$lib/components/FilterSectionHeader.svelte';
   import TripSearch from '$lib/components/TripSearch.svelte';
-  import { filtros, filtrarViajes } from '$lib/data/dash-filters.svelte';
+  import { filtros, filtrarViajes, limpiarFiltros, PERIODO_POR_DEFECTO } from '$lib/data/dash-filters.svelte';
   import { trips } from '$lib/data/trips';
 
-  let filtersOpen = $state(false);
   const filteredTrips = $derived(filtrarViajes(trips, { includeSearch: true }));
   const mapKey = $derived(filteredTrips.map((trip) => trip.id).join(','));
+
+  // "Limpiar filtros" sólo cuando hay alguna selección activa.
+  const hasFilters = $derived(
+    !!(filtros.producto || filtros.cliente || filtros.transportista || filtros.origen.length || filtros.destino.length || filtros.estado.length)
+    || filtros.fecha !== PERIODO_POR_DEFECTO
+  );
 </script>
 
 <a href="#main-content" class="skip-link">Ir al contenido principal</a>
 
 <div class="dashboard" id="main-content">
-  <div class="page-header filter-page-header">
-    <h1 class="section-heading section-heading--h1">
-      <span class="icon section-heading__icon" aria-hidden="true">grid_view</span>
-      Dashboard
-    </h1>
-    <div class="filter-page-header__controls">
-      <div class="viajes-search-row dashboard-search-row">
-        <TripSearch />
+  <!-- Sin título de página: la barra de navegación ya indica la sección. -->
+  <!-- Mapa (con buscador superpuesto) + panel de filtros permanente a la derecha. -->
+  <div class="dash-layout">
+    <div class="dash-layout__map" class:dash-layout__map--empty={filteredTrips.length === 0}>
+      <div class="dash-layout__search">
+        <div class="viajes-search-row">
+          <TripSearch />
+        </div>
       </div>
-      <button class="filters-toggle" type="button" aria-expanded={filtersOpen} aria-controls="dashboard-filters" onclick={() => filtersOpen = !filtersOpen}>
-        <span>FILTROS</span>
-        <span class="icon" aria-hidden="true">{filtersOpen ? 'expand_less' : 'tune'}</span>
-      </button>
+
+      {#if filteredTrips.length === 0}
+        <SearchEmptyState onOpenFilters={() => {}} onClearSearch={() => { filtros.busqueda = ''; }} />
+      {:else}
+        {#key mapKey}
+          <TransitMap trips={filteredTrips} collapsible={false} />
+        {/key}
+      {/if}
     </div>
+
+    <aside class="dash-filters-panel" aria-label="Filtros del dashboard">
+      <h2 class="dash-filters-panel__title">FILTROS</h2>
+      <div class="dash-filters-panel__body">
+        <DashFilters includeStatus />
+      </div>
+      {#if hasFilters}
+        <div class="dash-filters-panel__foot">
+          <button class="filter-section__clear" type="button" onclick={limpiarFiltros}>
+            LIMPIAR FILTROS
+            <span class="icon" aria-hidden="true">close</span>
+          </button>
+        </div>
+      {/if}
+    </aside>
   </div>
 
-  {#if filtersOpen}
-    <div class="filters-divider" aria-hidden="true"></div>
-    <section class="filter-section" id="dashboard-filters" aria-label="Filtros del Dashboard">
-      <FilterSectionHeader />
-      <DashFilters />
-      <StatusChips />
-    </section>
-  {/if}
-
-  {#if filteredTrips.length === 0}
-    <SearchEmptyState onOpenFilters={() => { filtersOpen = true; }} onClearSearch={() => { filtros.busqueda = ''; }} />
-  {:else}
-    <!-- Map and prediction -->
-    {#key mapKey}
-      <TransitMap trips={filteredTrips} />
-    {/key}
-
+  {#if filteredTrips.length > 0}
     <PredictionCards trips={filteredTrips} />
   {/if}
-
 </div>
 
 <style>

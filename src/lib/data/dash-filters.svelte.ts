@@ -70,7 +70,7 @@ export function rangoDePeriodo(p: PeriodoKey, hoy: Date = new Date()): { desde: 
 const semanaActual = rangoDePeriodo(PERIODO_POR_DEFECTO)!;
 
 export const filtros = $state({
-	estado:        null as TripState | null,
+	estado:        [] as TripState[],
 	busqueda:      '',
 	producto:      '',
 	cliente:       '',
@@ -101,7 +101,7 @@ export function filtrarViajes(items: Trip[], options: { includeSearch?: boolean;
 	const query = normalizarBusqueda(filtros.busqueda);
 
 	return items.filter((trip) => {
-		if (options.includeStatus !== false && filtros.estado && trip.estado !== filtros.estado) return false;
+		if (options.includeStatus !== false && filtros.estado.length && !filtros.estado.includes(trip.estado)) return false;
 		if (filtros.producto && trip.carga !== filtros.producto) return false;
 		if (filtros.cliente && trip.sap.cliCodigo !== filtros.cliente) return false;
 		if (filtros.transportista && trip.transportista !== filtros.transportista) return false;
@@ -132,7 +132,7 @@ export function filtrarViajes(items: Trip[], options: { includeSearch?: boolean;
 
 export function limpiarFiltros() {
 	const semana = rangoDePeriodo(PERIODO_POR_DEFECTO)!;
-	filtros.estado = null;
+	filtros.estado = [];
 	filtros.busqueda = '';
 	filtros.producto = '';
 	filtros.cliente = '';

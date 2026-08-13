@@ -1,14 +1,19 @@
 <script lang="ts">
   import DashFilters from '$lib/components/DashFilters.svelte';
   import StatusChips from '$lib/components/StatusChips.svelte';
-  import FilterSectionHeader from '$lib/components/FilterSectionHeader.svelte';
   import TripSearch from '$lib/components/TripSearch.svelte';
   import SearchEmptyState from '$lib/components/SearchEmptyState.svelte';
-  import { filtros, filtrarViajes } from '$lib/data/dash-filters.svelte';
+  import { filtros, filtrarViajes, limpiarFiltros, PERIODO_POR_DEFECTO } from '$lib/data/dash-filters.svelte';
   import { trips, STATE_ICONS, STATE_LABELS, type TripState } from '$lib/data/trips';
 
   let filtersOpen = $state(false);
   const dashTrips = $derived(filtrarViajes(trips, { includeSearch: true }));
+
+  // "Limpiar filtros" (al pie de la sección) sólo cuando hay una selección activa.
+  const hasFilters = $derived(
+    !!(filtros.producto || filtros.cliente || filtros.transportista || filtros.origen.length || filtros.destino.length || filtros.estado.length)
+    || filtros.fecha !== PERIODO_POR_DEFECTO
+  );
 
   const STATUS_COLORS: Partial<Record<TripState, { bg: string; ink: string }>> = {
     'en-transito':     { bg: 'var(--status-en-transito-bg)',      ink: 'var(--status-en-transito-ink)'      },
@@ -53,29 +58,34 @@
 </script>
 
 <div class="viajes" id="main-content">
-  <div class="viajes-header filter-page-header">
-    <h1 class="section-heading">
-      <span class="icon section-heading__icon" aria-hidden="true">route</span>
-      Viajes
-    </h1>
-    <div class="filter-page-header__controls">
-      <div class="viajes-search-row">
-        <TripSearch />
-      </div>
-      <button class="filters-toggle" type="button" aria-expanded={filtersOpen} aria-controls="viajes-filters" onclick={() => filtersOpen = !filtersOpen}>
-        <span>FILTROS</span>
-        <span class="icon" aria-hidden="true">{filtersOpen ? 'expand_less' : 'tune'}</span>
-      </button>
+  <!-- Sin título de página: la barra de navegación ya indica la sección; el
+       buscador se alinea a la izquierda y ocupa el ancho disponible. -->
+  <div class="viajes-header">
+    <div class="viajes-search-row">
+      <TripSearch />
     </div>
+    <button class="filters-toggle" type="button" aria-expanded={filtersOpen} aria-controls="viajes-filters" onclick={() => filtersOpen = !filtersOpen}>
+      <span class="icon" aria-hidden="true">filter_alt</span>
+      <span>VER FILTROS</span>
+      <span class="icon" aria-hidden="true">{filtersOpen ? 'expand_less' : 'expand_more'}</span>
+    </button>
   </div>
 
   {#if filtersOpen}
     <div class="filters-divider" aria-hidden="true"></div>
     <section class="filter-section" id="viajes-filters" aria-label="Filtros de Viajes">
-      <FilterSectionHeader />
       <DashFilters />
       <StatusChips />
+      {#if hasFilters}
+        <button class="filter-section__clear filter-section__clear--full" type="button" onclick={limpiarFiltros}>
+          LIMPIAR FILTROS
+          <span class="icon" aria-hidden="true">close</span>
+        </button>
+      {/if}
     </section>
+    <!-- Borde inferior a la misma distancia que la línea superior (el gap de
+         `.viajes` es simétrico), cerrando la barra de estado. -->
+    <div class="filters-divider" aria-hidden="true"></div>
   {/if}
 
   <div class="cards-container" role="region" aria-label="Tabla de despachos activos">

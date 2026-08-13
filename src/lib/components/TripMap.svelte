@@ -151,7 +151,7 @@
 		// mostraría una ubicación que nadie está midiendo.
 		if (trip.gps) {
 			markers.push(
-				new maplibregl.Marker({ element: truckMarkerEl(trip.unidad, color) })
+				new maplibregl.Marker({ element: truckMarkerEl(trip.unidad, color, trip.estado !== 'en-retorno') })
 					.setLngLat([trip.coordenadas.lng, trip.coordenadas.lat])
 					.addTo(map)
 			);

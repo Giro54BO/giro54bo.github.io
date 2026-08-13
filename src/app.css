@@ -9,7 +9,7 @@
 	--blue-lighter:       oklch(0.95 0.012 215);  /* #e9f0f2 — Light */
 	--blue-light:         oklch(0.93 0.015 215);  /* #dfe8eb — Light :hover */
 	--blue-light-active:  oklch(0.85 0.025 215);  /* #bccfd6 — Light :active */
-	--blue-normal:        oklch(0.47 0.07  215);  /* #27647c — Normal (brand primary) */
+	--blue-normal:        #285d6f;                /* #285D6F — DS sapphire (brand primary) */
 	--blue-normal-hover:  oklch(0.43 0.07  215);  /* #235a70 — Normal :hover */
 	--blue-normal-active: oklch(0.39 0.065 215);  /* #1f5063 — Normal :active */
 	--blue-dark:          oklch(0.37 0.065 215);  /* #1d4b5d — Dark */
@@ -43,6 +43,8 @@
 	--green-100: oklch(0.94 0.06 130);
 	--green-50:  oklch(0.97 0.03 130);
 	--green-normal: #9fd500;            /* Figma green/normal — primary action */
+	--green-normal-hover:  #6ab500;     /* DS green/normal :hover */
+	--green-normal-active: #5ea100;     /* DS green/normal :active */
 
 	/* ── Validación (Figma) ── */
 	--error-bg:   #ffebee;
@@ -69,18 +71,18 @@
 	--ink-4: oklch(0.70 0.006 215);
 
 	/* ── Semantic status colors ── */
-	--status-en-carga-bg:          oklch(0.95 0.06 70);
-	--status-en-carga-ink:         oklch(0.45 0.14 65);
-	--status-en-transito-bg:       var(--green-100);
-	--status-en-transito-ink:      oklch(0.38 0.15 130);
-	--status-en-frontera-bg:       var(--info-bg);
-	--status-en-frontera-ink:      var(--info-ink);
-	--status-en-descarga-bg:       oklch(0.93 0.05 195);
-	--status-en-descarga-ink:      oklch(0.38 0.10 195);
-	--status-en-retorno-bg:        oklch(0.93 0.04 290);
-	--status-en-retorno-ink:       oklch(0.40 0.09 290);
-	--status-incidencia-bg:        var(--error-bg);
-	--status-incidencia-ink:       var(--error-ink);
+	--status-en-carga-bg:          #fff3e0;           /* DS carga — naranja */
+	--status-en-carga-ink:         #e65100;
+	--status-en-transito-bg:       #f1fae6;           /* DS tránsito — verde */
+	--status-en-transito-ink:      #599700;
+	--status-en-frontera-bg:       var(--info-bg);    /* #e3f2fd — DS frontera */
+	--status-en-frontera-ink:      var(--info-ink);   /* #1565c0 — DS frontera */
+	--status-en-descarga-bg:       #e0f7fa;           /* DS descarga — teal */
+	--status-en-descarga-ink:      #00838f;
+	--status-en-retorno-bg:        #ede7f6;           /* DS retorno — morado */
+	--status-en-retorno-ink:       #5e35b1;
+	--status-incidencia-bg:        var(--error-bg);   /* #ffebee — DS incidencia */
+	--status-incidencia-ink:       var(--error-ink);  /* #e53935 — DS incidencia */
 
 	/* ── Z-index scale ── */
 	--z-dropdown:       100;
@@ -122,17 +124,34 @@
 	/* ── Radius ── */
 	--radius-sm:   4px;
 	--radius-md:   8px;
-	--radius-lg:   12px;
+	--radius-lg:   12px;   /* botones (DS radius-m) */
+	--radius-l:    16px;   /* inputs / filas de tabla (DS radius-l) */
+	--radius-xl:   20px;   /* tarjetas (DS radius-xl) */
 	--radius-full: 9999px;
 
 	/* ── Shadows ── */
 	--shadow-sm: 0 1px 3px oklch(0.18 0.02 215 / 0.08);
 	--shadow-md: 0 4px 12px oklch(0.18 0.02 215 / 0.10);
+	/* Elevación DS — sombras suaves de bajo contraste */
+	--shadow-card:    0 4px 4px rgba(0, 0, 0, 0.04);
+	--shadow-raised:  0 4px 16px rgba(0, 0, 0, 0.08);
+	--shadow-elev:    0 1px 3px rgba(7, 20, 23, 0.08);
+	--shadow-overlay: 0 12px 32px rgba(14, 35, 43, 0.16);
+	--backdrop:       rgba(7, 20, 23, 0.42);
 
 	/* ── Transitions ── */
 	--ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
 	--duration-fast:  150ms;
 	--duration-base:  200ms;
+
+	/* ── Alias semánticos (IASA Design System) ── */
+	--color-primary:        var(--green-normal);
+	--color-primary-hover:  var(--green-normal-hover);
+	--color-primary-active: var(--green-normal-active);
+	--color-on-primary:     var(--blue-dark);
+	--surface-card:         var(--surface);
+	--border-default:       var(--border);
+	--text-strong:          var(--blue-darker);
 }
 
 /* App page styles moved from src/routes/+page.svelte to keep pages thin. */
@@ -161,7 +180,7 @@
 /* ── Material Symbols ── */
 .icon {
 	font-family: 'Material Symbols Rounded';
-	font-variation-settings: 'FILL' 0, 'wght' 200, 'GRAD' 0, 'opsz' 24;
+	font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
 	font-size: 20px;
 	line-height: 1;
 	display: inline-flex;
@@ -174,9 +193,9 @@
 	white-space: nowrap;
 	flex-shrink: 0;
 }
-.icon--sm  { font-size: 16px; font-variation-settings: 'FILL' 0, 'wght' 200, 'GRAD' 0, 'opsz' 20; }
+.icon--sm  { font-size: 16px; font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20; }
 .icon--lg  { font-size: 24px; }
-.icon--xl  { font-size: 32px; font-variation-settings: 'FILL' 0, 'wght' 200, 'GRAD' 0, 'opsz' 40; }
+.icon--xl  { font-size: 32px; font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 40; }
 
 .tooltip-trigger {
 	position: relative;
@@ -305,8 +324,16 @@ body {
 }
 .filter-page-header { position: relative; align-items: center; }
 .filter-page-header__controls { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: var(--space-4); min-width: 0; pointer-events: none; }
-.filter-page-header__controls .viajes-search-row { flex: 0 1 851px; width: min(851px, calc(100% - 300px)); max-width: 851px; margin: 0; pointer-events: auto; }
-.filters-toggle { position: absolute; right: 0; display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); width: 134px; height: 43px; padding: 0 var(--space-4); border: 1px solid var(--blue-light-active); border-radius: var(--radius-lg); color: var(--blue-dark); background: var(--surface); font: 700 var(--text-sm) var(--font-body); pointer-events: auto; }
+/* flex-basis:auto so the responsive `width` below actually drives the size
+   (a definite flex-basis would override it, pinning the pill at 851px and
+   overlapping the FILTROS button on mid-size screens). The -300px reserve
+   keeps the centred pill clear of the absolutely-positioned toggle. */
+.filter-page-header__controls .viajes-search-row { flex: 0 1 auto; width: min(851px, calc(100% - 388px)); max-width: 851px; margin: 0; pointer-events: auto; }
+/* Mismo patrón que el CTA de Incidencias (.btn-outline): anillo interior de
+   1.5px azul sobre fondo transparente, en lugar del borde claro relleno. */
+.filters-toggle { flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); width: auto; min-width: 134px; height: 43px; padding: 0 var(--space-4); border: 0; box-shadow: inset 0 0 0 1.5px var(--blue-dark); border-radius: var(--radius-lg); color: var(--blue-dark); background: transparent; font: 700 var(--text-sm) var(--font-body); letter-spacing: 0.01em; text-transform: uppercase; }
+/* Viajes: buscador a la izquierda ocupando el espacio, botón de filtros a la derecha. */
+.viajes-header .viajes-search-row { flex: 1 1 auto; width: auto; min-width: 0; }
 .filters-toggle:hover { background: var(--blue-lighter); }
 .filters-toggle:focus-visible { outline: 2px solid var(--blue-normal); outline-offset: 2px; }
 .viajes-header__left { display: flex; align-items: center; gap: var(--space-6); min-width: 0; }
@@ -343,12 +370,14 @@ body {
 	border-radius: var(--radius-lg);
 	color: var(--blue-dark);
 }
-.dash-select:focus-within { border-color: var(--blue-normal); box-shadow: 0 0 0 3px oklch(0.47 0.07 215 / 0.12); }
+.dash-select:focus-within { border-color: var(--blue-normal); box-shadow: 0 0 0 3px color-mix(in oklch, var(--blue-normal) 12%, transparent); }
 .dash-select > .icon:first-child { color: var(--grey-muted); flex-shrink: 0; }
 .dash-select select,
 .dash-select input { border: 0; background: transparent; font: 600 var(--text-sm) var(--font-body); color: var(--grey-dark); outline: 0; min-width: 0; appearance: none; }
 .dash-select select { max-width: 220px; text-overflow: ellipsis; }
 .dash-select__caret { color: var(--grey-muted); pointer-events: none; margin-left: auto; }
+/* Con una selección activa, el valor se muestra en negro (vs. el azul del marcador). */
+.dash-select--selected .dash-select__label { color: var(--grey-darker); font-weight: 600; }
 .dash-clear { display: inline-flex; align-items: center; gap: 4px; height: 43px; padding: 0 var(--space-4); border-radius: var(--radius-lg); color: var(--grey-muted); font: 600 var(--text-sm) var(--font-body); }
 .dash-clear:hover { background: var(--surface); color: var(--blue-dark); }
 
@@ -446,10 +475,12 @@ body {
 .filter-section { display: flex; flex-direction: column; gap: var(--space-6); width: 100%; }
 .filter-section__header { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); min-height: 43px; padding-left: 2px; }
 .filter-section__title { color: var(--grey-dark); font-family: var(--font-body); font-size: var(--text-sm); font-weight: 500; line-height: 17px; }
-.filter-section__clear { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); min-width: 176px; height: 43px; padding: 8px 16px; border-radius: var(--radius-lg); background: var(--blue-light); color: var(--blue-normal); font: 700 var(--text-sm) var(--font-body); }
+.filter-section__clear { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); min-width: 176px; height: 43px; padding: 8px 16px; border-radius: var(--radius-lg); background: var(--blue-light); color: var(--blue-normal); font: 700 var(--text-sm) var(--font-body); letter-spacing: 0.01em; text-transform: uppercase; }
 .filter-section__clear:hover:not(:disabled) { background: var(--blue-light-active); }
 .filter-section__clear .icon { font-size: 24px; }
 .filter-section__clear--disabled { opacity: .55; cursor: default; }
+/* Viajes: "Limpiar filtros" al pie de la sección, a todo lo ancho. */
+.filter-section__clear--full { width: 100%; min-width: 0; margin-top: var(--space-2); }
 .status-filter__label { color: var(--grey-dark); }
 
 .multi-select-menu { display: none; position: absolute; z-index: var(--z-dropdown); min-width: 220px; margin-top: 70px; background: var(--surface); border: 1px solid var(--border-2); border-radius: var(--radius-lg); box-shadow: var(--shadow-md); overflow: hidden; }
@@ -466,9 +497,9 @@ body {
 .multi-select-empty { padding: var(--space-4); color: var(--grey-muted); font-size: var(--text-sm); }
 .date-filter-menu { min-width: 100%; margin-top: 4px; }
 
-.btn-outline { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); height: 43px; border-radius: var(--radius-lg); font: 700 var(--text-sm) var(--font-body); white-space: nowrap; }
-.btn-outline { min-width: 260px; padding: 0 var(--space-4); border: 1.5px solid var(--blue-dark); color: var(--blue-dark); }
-.btn-outline:hover { background: var(--teal-50); }
+.btn-outline { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); height: 43px; border-radius: var(--radius-lg); font: 700 var(--text-sm) var(--font-body); letter-spacing: 0.01em; text-transform: uppercase; white-space: nowrap; }
+.btn-outline { min-width: 260px; padding: 0 var(--space-4); border: 0; box-shadow: inset 0 0 0 1.5px var(--blue-dark); color: var(--blue-dark); background: transparent; }
+.btn-outline:hover { background: var(--blue-lighter); }
 
 .filter-bar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
 .filter-chip { display: inline-flex; align-items: center; gap: var(--space-2); min-height: 44px; padding: 0 var(--space-3); border: 1px solid var(--border-2); border-radius: var(--radius-full); color: var(--grey-normal); font: 600 var(--text-sm) var(--font-body); }
@@ -478,7 +509,7 @@ body {
 .filter-chip--active .filter-chip__count { background: var(--blue-lighter); }
 .search-pill { display: flex; align-items: center; gap: var(--space-2); width: min(360px, 38vw); height: 43px; padding: 0 var(--space-3); background: var(--surface); border: 1px solid var(--border-2); border-radius: var(--radius-lg); }
 .search-pill:focus-within,
-.search-pill--filled { border-color: var(--blue-normal); box-shadow: 0 0 0 3px oklch(0.47 0.07 215 / 0.12); }
+.search-pill--filled { border-color: var(--blue-normal); box-shadow: 0 0 0 3px color-mix(in oklch, var(--blue-normal) 12%, transparent); }
 .search-pill__icon { color: var(--blue-dark); }
 .search-pill__field { position: relative; flex: 1; min-width: 0; display: flex; align-items: center; }
 .search-pill__input { width: 100%; min-width: 0; overflow: hidden; border: 0; outline: 0; background: transparent; font: var(--text-sm) var(--font-body); text-overflow: ellipsis; white-space: nowrap; }
@@ -486,7 +517,10 @@ body {
 /* El marcador nativo sólo se ve con foco (hint estático). Sin foco lo cubre el
    marcador animado, así que se oculta para no duplicarlo. */
 .search-pill__input::placeholder { color: var(--grey-muted); }
-.search-pill__input:not(:focus)::placeholder { color: transparent; }
+/* Sólo el buscador con marcador animado (TripSearch) oculta el placeholder
+   nativo sin foco — su overlay ya muestra los ejemplos. Los demás buscadores
+   (p. ej. Incidencias) muestran su placeholder también en reposo. */
+.trip-search .search-pill__input:not(:focus)::placeholder { color: transparent; }
 
 /* ── Marcador de posición animado: ejemplos que rotan + destello ── */
 .search-ph {
@@ -534,12 +568,56 @@ body {
 .search-pill__clear:hover { opacity: .82; }
 .search-pill__clear .icon { display: inline-grid; place-items: center; width: 24px; height: 24px; padding: 0; border-radius: 50%; background: var(--blue-dark); font-size: 16px; line-height: 1; }
 
+/* ── Dashboard: mapa con buscador superpuesto + panel de filtros lateral ── */
+.dash-layout { display: flex; align-items: stretch; gap: var(--space-6); }
+.dash-layout__map { position: relative; flex: 1 1 auto; min-width: 0; min-height: 480px; }
+/* El mapa (posición absoluta) llena su columna; la columna se estira a la altura
+   de la tarjeta de filtros, así el mapa y los filtros miden lo mismo. */
+.dash-layout__map .map-card { position: absolute !important; inset: 0; height: auto !important; }
+.dash-layout__map .map-el { height: 100% !important; }
+/* Pantalla completa sobre el contenedor del mapa: incluye el buscador superpuesto
+   (la tarjeta del mapa —posición absoluta— llena el contenedor y el buscador
+   queda por encima, dejando libre el botón de pantalla completa). */
+.dash-layout__map:fullscreen { background: var(--surface-2); }
+.dash-layout__map:fullscreen .dash-layout__search { top: 16px; }
+/* Buscador superpuesto en la parte superior del mapa (deja libre el botón de
+   pantalla completa, arriba a la derecha). */
+.dash-layout__search { position: absolute; z-index: 6; top: 16px; left: 16px; right: 66px; }
+.dash-layout__search .viajes-search-row { width: 100%; margin: 0; }
+.dash-layout__search .search-pill { width: 100%; height: 43px; padding-inline: 25px; background: var(--surface); border-color: var(--blue-light-active); border-radius: var(--radius-full); box-shadow: var(--shadow-card); }
+/* Sin resultados: el buscador pasa a flujo normal, sobre el estado vacío. */
+.dash-layout__map--empty { display: flex; flex-direction: column; gap: var(--space-4); }
+.dash-layout__map--empty .dash-layout__search { position: static; }
+
+.dash-filters-panel { flex: 0 0 300px; align-self: stretch; display: flex; flex-direction: column; gap: var(--space-4); padding: var(--space-5); background: var(--surface-card); border: 1px solid var(--blue-light-active); border-radius: var(--radius-xl); box-shadow: var(--shadow-card); }
+.dash-filters-panel__title { font: 700 var(--text-sm) var(--font-body); letter-spacing: 0.04em; color: var(--blue-dark); }
+.dash-filters-panel__body { flex: 1 1 auto; min-height: 0; }
+.dash-filters-panel__foot { margin-top: auto; padding-top: var(--space-4); border-top: 1px solid var(--blue-light-active); }
+.dash-filters-panel__foot .filter-section__clear { width: 100%; min-width: 0; }
+
+/* Filtros en vertical dentro del panel (anula el layout horizontal de ancho fijo). */
+.dash-filters-panel .dash-filters { display: flex !important; flex-direction: column; align-items: stretch; gap: var(--space-3); margin: 0; }
+.dash-filters-panel .dash-filter { flex: 0 0 auto !important; width: 100% !important; min-width: 0; }
+.dash-filters-panel .dash-select { width: 100%; }
+.dash-filters-panel .dash-filter--select { order: -1; } /* Fecha primero, como en Figma */
+
+@media (max-width: 1024px) {
+	.dash-layout { flex-direction: column; }
+	.dash-filters-panel { flex: none; align-self: auto; }
+	.dash-filters-panel .dash-filters { flex-direction: row; flex-wrap: wrap; }
+	.dash-filters-panel .dash-filter { width: auto !important; flex: 1 1 210px !important; }
+	.dash-filters-panel .dash-filter--select { order: 0; }
+}
+@media (max-width: 700px) {
+	.dash-filters-panel .dash-filter { flex-basis: 100% !important; }
+}
+
 .cards-container { position: relative; font-variant-numeric: lining-nums tabular-nums; font-feature-settings: 'lnum' 1, 'tnum' 1; }
 .viajes .cards-container { margin-top: var(--space-6); }
 .cards-header { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)) 24px; gap: 80px; padding: 0 40px var(--space-2); color: var(--grey-muted); font-size: var(--text-xs); font-weight: 700; letter-spacing: .045em; line-height: 1.35; text-transform: uppercase; text-wrap: balance; }
 .cards-list { display: flex; flex-direction: column; gap: var(--space-2); }
-.trip-card { display: block; width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: none; transition: transform var(--duration-fast), border-color var(--duration-fast); }
-.trip-card:hover { transform: translateY(-2px); border-color: var(--border-2); }
+.trip-card { display: block; width: 100%; background: var(--surface-card); border: 0; border-radius: var(--radius-l); box-shadow: inset 0 0 0 1px var(--border-default), var(--shadow-card); transition: transform var(--duration-fast), box-shadow var(--duration-fast); }
+.trip-card:hover { transform: translateY(-2px); box-shadow: inset 0 0 0 1px var(--border-2), var(--shadow-raised); }
 .card-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)) 24px; gap: 80px; align-items: center; padding: 16px 40px; min-height: 117px; }
 .card-cell, .cell-line { display: flex; align-items: center; gap: var(--space-3); min-width: 0; }
 .cell-stack { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
@@ -583,18 +661,19 @@ body {
 .search-empty-state__date { width: min(100%, 720px); margin-top: var(--space-2); }
 .search-empty-state__actions { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--space-3); margin-top: var(--space-2); }
 .search-empty-state__actions .btn-outline { min-height: 43px; }
-.btn-outline--muted { border-color: var(--border-2); color: var(--grey-normal); }
+.btn-outline--muted { box-shadow: inset 0 0 0 1.5px var(--border-2); color: var(--grey-normal); }
 .btn-outline--muted:hover { background: var(--surface-2); }
 .alerts-grid { display: grid; grid-template-columns: repeat(3, minmax(280px, 363px)); gap: var(--space-8); list-style: none; }
-.alert-card { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; padding: var(--space-4); background: var(--surface); border: 1px solid var(--grey-light); border-radius: var(--radius-lg); color: inherit; }
-.alert-card--linked { transition: border-color var(--duration-fast), background var(--duration-fast); }
-.alert-card--linked:hover { border-color: var(--blue-light-active); background: var(--surface-2); }
+.alert-card { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; padding: var(--space-4); background: var(--surface-card); border: 0; border-radius: var(--radius-xl); box-shadow: inset 0 0 0 1px var(--border-default), var(--shadow-card); color: inherit; }
+.alert-card--linked { transition: box-shadow var(--duration-fast), background var(--duration-fast); }
+.alert-card--linked:hover { box-shadow: inset 0 0 0 1px var(--blue-light-active), var(--shadow-raised); background: var(--surface-2); }
 .alert-card--linked:focus-visible { outline: 2px solid var(--blue-normal); outline-offset: 3px; }
 .alert-card__header { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); }
 .alert-card__type, .alert-card__unit { display: inline-flex; align-items: center; gap: 4px; min-height: 33px; padding: 0 var(--space-3); border-radius: var(--radius-full); font-size: var(--text-sm); font-weight: 700; }
 .alert-card__type { background: var(--error-bg); color: var(--error-ink); }
 .alert-card__type--retraso { background: var(--warn-bg); color: var(--warn-ink); }
-.alert-card__type--parada, .alert-card__type--desvio { background: var(--info-bg); color: var(--info-ink); }
+.alert-card__type--parada { background: var(--info-bg); color: var(--info-ink); }
+.alert-card__type--desvio { background: var(--status-en-retorno-bg); color: var(--status-en-retorno-ink); }
 .alert-card__unit { background: var(--blue-lighter); color: var(--blue-darker); }
 .alert-card__unit--global { background: var(--grey-lighter); color: var(--grey-normal); }
 .alert-card__message { color: var(--grey-darker); font-size: var(--text-sm); font-weight: 500; line-height: 1.7; }
@@ -603,6 +682,58 @@ body {
 .alert-card__action { display: inline-flex; align-items: center; gap: var(--space-3); color: var(--blue-dark); font-size: var(--text-lg); font-weight: 700; }
 .alert-card__action .icon { font-size: 30px; }
 .route-fallback { padding: var(--space-8) 0; color: var(--grey-muted); }
+
+/* ── Incidencias: controles (búsqueda + chips permanentes) ── */
+/* Cabecera sin título: buscador alineado a la izquierda ocupando el ancho · CTA
+   a la derecha (en pantallas chicas se apilan). */
+.inc-page-header { display: flex; align-items: center; gap: var(--space-4); }
+.inc-page-header .section-heading { flex: 0 0 auto; }
+.inc-search-wrap { flex: 1 1 auto; display: flex; justify-content: flex-start; min-width: 0; }
+.inc-search { width: 100%; height: 43px; border-radius: var(--radius-full); }
+.inc-cta { flex: 0 0 auto; min-width: 0; }
+.inc-controls { display: flex; flex-direction: column; gap: var(--space-3); }
+.inc-chips { gap: var(--space-2); }
+@media (max-width: 820px) {
+	.inc-page-header { flex-direction: column; align-items: stretch; gap: var(--space-3); }
+	.inc-search-wrap { justify-content: stretch; }
+	.inc-search { width: 100%; }
+	.inc-cta { width: 100%; }
+}
+
+/* ── Incidencias: tabla (escritorio) ──
+   Mismas columnas en cabecera y filas; colapsa a tarjetas ≤1200px como Viajes. */
+.inc-table { display: flex; flex-direction: column; gap: var(--space-2); }
+.inc-table__head,
+.inc-row { display: grid; grid-template-columns: 210px minmax(150px, 220px) minmax(0, 1fr) 130px 24px; gap: var(--space-4); align-items: center; }
+.inc-table__head { padding: 0 var(--space-5) var(--space-2); color: var(--grey-muted); font-size: var(--text-xs); font-weight: 700; letter-spacing: .045em; text-transform: uppercase; }
+.inc-table__body { display: flex; flex-direction: column; gap: var(--space-2); }
+.inc-row { min-height: 64px; padding: 12px var(--space-5); border-radius: var(--radius-l); background: var(--surface-card); box-shadow: inset 0 0 0 1px var(--border-default), var(--shadow-card); color: inherit; transition: transform var(--duration-fast), box-shadow var(--duration-fast); }
+a.inc-row:hover { transform: translateY(-1px); box-shadow: inset 0 0 0 1px var(--blue-light-active), var(--shadow-raised); }
+a.inc-row:focus-visible { outline: 2px solid var(--blue-normal); outline-offset: 2px; }
+.inc-cell { min-width: 0; }
+.inc-cell--tipo { display: inline-flex; align-items: center; gap: var(--space-2); }
+.inc-tipo-label { font-size: var(--text-sm); font-weight: 700; color: var(--grey-dark); white-space: nowrap; }
+.inc-cell--desp { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.inc-cell--desp strong { color: var(--blue-dark); font-size: var(--text-sm); font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.inc-sub { color: var(--grey-muted); font-size: var(--text-xs); }
+.inc-global { display: inline-flex; align-items: center; gap: 4px; color: var(--grey-muted); font-size: var(--text-sm); font-weight: 600; }
+.inc-cell--msg { color: var(--grey-normal); font-size: var(--text-sm); line-height: 1.4; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.inc-cell--time { color: var(--grey-muted); font-size: var(--text-sm); white-space: nowrap; }
+.inc-cell--action { display: flex; justify-content: flex-end; color: var(--ink-4); }
+.inc-cell--action .icon { font-size: 16px; }
+
+/* Tarjetas (dispositivos pequeños) — reutiliza el diseño de .alert-card */
+.inc-cards { display: none; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: var(--space-4); list-style: none; }
+.inc-cards > li { display: flex; min-width: 0; }
+.inc-cards .alert-card { width: 100%; }
+
+@media (max-width: 1200px) {
+  .inc-table { display: none; }
+  .inc-cards { display: grid; }
+}
+@media (max-width: 700px) {
+  .inc-cards { grid-template-columns: 1fr; }
+}
 
 @media (max-width: 1200px) {
 	.cards-header { display: none; }
@@ -629,7 +760,7 @@ body {
 }
 @media (max-width: 700px) {
 	.dashboard, .viajes, .incidencias { padding: var(--space-6) 0 var(--space-8); }
-	.page-header, .viajes-header { align-items: flex-start; flex-direction: column; }
+	.page-header, .viajes-header { align-items: stretch; flex-direction: column; }
 	.filter-page-header__controls { position: static; display: flex; width: 100%; flex-direction: column; align-items: stretch; gap: var(--space-3); }
 	.filter-page-header__controls .viajes-search-row { flex: none; width: 100%; max-width: none; margin: 0; }
 	.filters-toggle { position: static; width: 100%; }
@@ -745,6 +876,12 @@ a { color: inherit; text-decoration: none; }
 	color: var(--ink-1);
 	font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 24;
 }
+/* En ruta al destino (Bolivia → Pacífico = oeste): el camión se voltea y mira
+   al oeste, en el sentido del viaje. Sólo las unidades "Disponible" (en retorno)
+   quedan sin voltear, mirando al este, de regreso. */
+.tm-truck__pin--flip { transform: scaleX(-1); }
+/* Vista alejada: sólo el icono del camión; la placa aparece al acercar. */
+.tm-hide-labels .tm-truck__label { display: none; }
 .tm-truck__pulse {
 	position: absolute;
 	top: 50%;
@@ -757,10 +894,14 @@ a { color: inherit; text-decoration: none; }
 	opacity: 0.35;
 	animation: tm-pulse 2.4s var(--ease-out-quart) infinite;
 }
+/* Etiqueta a la derecha del punto (no debajo): cuando varias unidades caen en
+   el mismo lugar, las etiquetas inferiores se encimaban y tapaban el clic. */
 .tm-truck__label {
 	position: absolute;
-	top: 100%;
-	margin-top: 4px;
+	left: 100%;
+	top: 50%;
+	transform: translateY(-50%);
+	margin-left: 5px;
 	display: inline-flex;
 	align-items: center;
 	gap: 3px;

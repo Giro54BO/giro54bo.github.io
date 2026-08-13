@@ -1,7 +1,12 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { filtros, rangoDePeriodo, PERIODOS, type PeriodoKey } from '$lib/data/dash-filters.svelte';
-  import { trips } from '$lib/data/trips';
+  import { filtros, rangoDePeriodo, PERIODOS, PERIODO_POR_DEFECTO, type PeriodoKey } from '$lib/data/dash-filters.svelte';
+  import { trips, STATE_LABELS, type TripState } from '$lib/data/trips';
+
+  // El filtro de Estado (multi-selección) sólo se muestra donde no hay chips de
+  // estado (el dashboard). En Viajes se sigue usando StatusChips.
+  let { includeStatus = false }: { includeStatus?: boolean } = $props();
+  const ESTADOS: TripState[] = ['en-carga', 'en-transito', 'en-frontera', 'en-descarga', 'incidencia', 'en-retorno'];
 
   // Derived option lists from the dataset
   const productos      = [...new Set(trips.map(t => t.carga))].sort();
@@ -17,6 +22,7 @@
   let transportistaOpen = $state(false);
   let origenOpen = $state(false);
   let destinoOpen = $state(false);
+  let estadoOpen = $state(false);
   let fechaOpen = $state(false);
   let productoQuery = $state('');
   let clienteQuery = $state('');
@@ -28,6 +34,7 @@
   let transportistaContainerRef: HTMLElement;
   let origenContainerRef: HTMLElement;
   let destinoContainerRef: HTMLElement;
+  let estadoContainerRef: HTMLElement;
   let fechaContainerRef: HTMLElement;
 
   function getProductosFiltered() { return productos.filter(p => p.toLowerCase().includes(productoQuery.toLowerCase())); }
@@ -78,6 +85,17 @@
   function setAllOrigen() { filtros.origen = filtros.origen.length === origenes.length ? [] : [...origenes]; }
   function setAllDestino() { filtros.destino = filtros.destino.length === destinos.length ? [] : [...destinos]; }
 
+  function estadoLabel() {
+    return filtros.estado.length
+      ? filtros.estado.length === 1 ? STATE_LABELS[filtros.estado[0]] : `${filtros.estado.length} estados seleccionados`
+      : 'Todos los estados';
+  }
+  function toggleEstado(value: TripState) {
+    if (filtros.estado.includes(value)) filtros.estado = filtros.estado.filter(item => item !== value);
+    else filtros.estado = [...filtros.estado, value];
+  }
+  function setAllEstado() { filtros.estado = filtros.estado.length === ESTADOS.length ? [] : [...ESTADOS]; }
+
   onMount(() => {
     const handleClick = (event: MouseEvent) => {
       if (productoOpen && productoContainerRef && !productoContainerRef.contains(event.target as Node)) productoOpen = false;
@@ -85,10 +103,11 @@
       if (transportistaOpen && transportistaContainerRef && !transportistaContainerRef.contains(event.target as Node)) transportistaOpen = false;
       if (origenOpen && origenContainerRef && !origenContainerRef.contains(event.target as Node)) origenOpen = false;
       if (destinoOpen && destinoContainerRef && !destinoContainerRef.contains(event.target as Node)) destinoOpen = false;
+      if (estadoOpen && estadoContainerRef && !estadoContainerRef.contains(event.target as Node)) estadoOpen = false;
       if (fechaOpen && fechaContainerRef && !fechaContainerRef.contains(event.target as Node)) fechaOpen = false;
     };
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') { productoOpen = clienteOpen = transportistaOpen = origenOpen = destinoOpen = fechaOpen = false; }
+      if (event.key === 'Escape') { productoOpen = clienteOpen = transportistaOpen = origenOpen = destinoOpen = estadoOpen = fechaOpen = false; }
     };
     window.addEventListener('click', handleClick);
     window.addEventListener('keydown', handleKeyDown);
@@ -102,7 +121,7 @@
   <!-- Productos -->
   <div class="dash-filter dash-filter--predictive" bind:this={productoContainerRef}>
     <span class="dash-filter__label">Producto</span>
-    <button type="button" class="dash-select dash-select--clickable" aria-haspopup="listbox" aria-expanded={productoOpen}
+    <button type="button" class="dash-select dash-select--clickable" class:dash-select--selected={!!filtros.producto} aria-haspopup="listbox" aria-expanded={productoOpen}
       onclick={() => { productoOpen = !productoOpen; clienteOpen = transportistaOpen = origenOpen = destinoOpen = false; }}>
       <span class="icon icon--sm" aria-hidden="true">inventory_2</span>
       <span class="dash-select__label">{productoSelectedLabel()}</span>
@@ -127,7 +146,7 @@
   <!-- Cliente -->
   <div class="dash-filter dash-filter--predictive" bind:this={clienteContainerRef}>
     <span class="dash-filter__label">Cliente</span>
-    <button type="button" class="dash-select dash-select--clickable" aria-haspopup="listbox" aria-expanded={clienteOpen}
+    <button type="button" class="dash-select dash-select--clickable" class:dash-select--selected={!!filtros.cliente} aria-haspopup="listbox" aria-expanded={clienteOpen}
       onclick={() => { clienteOpen = !clienteOpen; productoOpen = transportistaOpen = origenOpen = destinoOpen = false; }}>
       <span class="icon icon--sm" aria-hidden="true">apartment</span>
       <span class="dash-select__label">{clienteSelectedLabel()}</span>
@@ -152,7 +171,7 @@
   <!-- Transportista -->
   <div class="dash-filter dash-filter--predictive" bind:this={transportistaContainerRef}>
     <span class="dash-filter__label">Transportadora</span>
-    <button type="button" class="dash-select dash-select--clickable" aria-haspopup="listbox" aria-expanded={transportistaOpen}
+    <button type="button" class="dash-select dash-select--clickable" class:dash-select--selected={!!filtros.transportista} aria-haspopup="listbox" aria-expanded={transportistaOpen}
       onclick={() => { transportistaOpen = !transportistaOpen; productoOpen = clienteOpen = origenOpen = destinoOpen = false; }}>
       <span class="icon icon--sm" aria-hidden="true">business_center</span>
       <span class="dash-select__label">{transportistaSelectedLabel()}</span>
@@ -177,7 +196,7 @@
   <!-- Origen -->
   <div class="dash-filter dash-filter--multi" bind:this={origenContainerRef}>
     <span class="dash-filter__label">Origen</span>
-    <button type="button" class="dash-select dash-select--multi dash-select--clickable" aria-haspopup="listbox" aria-expanded={origenOpen}
+    <button type="button" class="dash-select dash-select--multi dash-select--clickable" class:dash-select--selected={filtros.origen.length > 0} aria-haspopup="listbox" aria-expanded={origenOpen}
       onclick={() => { origenOpen = !origenOpen; destinoOpen = productoOpen = clienteOpen = transportistaOpen = false; }}>
       <span class="icon icon--sm" aria-hidden="true">factory</span>
       <span class="dash-select__label">{origenLabel()}</span>
@@ -197,7 +216,7 @@
   <!-- Destino -->
   <div class="dash-filter dash-filter--multi" bind:this={destinoContainerRef}>
     <span class="dash-filter__label">Destino</span>
-    <button type="button" class="dash-select dash-select--multi dash-select--clickable" aria-haspopup="listbox" aria-expanded={destinoOpen}
+    <button type="button" class="dash-select dash-select--multi dash-select--clickable" class:dash-select--selected={filtros.destino.length > 0} aria-haspopup="listbox" aria-expanded={destinoOpen}
       onclick={() => { destinoOpen = !destinoOpen; origenOpen = false; }}>
       <span class="icon icon--sm" aria-hidden="true">place</span>
       <span class="dash-select__label">{destinoLabel()}</span>
@@ -214,10 +233,31 @@
     </div>
   </div>
 
+  {#if includeStatus}
+    <!-- Estado (multi-selección) — reemplaza a los chips donde no los hay (dashboard). -->
+    <div class="dash-filter dash-filter--multi" bind:this={estadoContainerRef}>
+      <span class="dash-filter__label">Estado</span>
+      <button type="button" class="dash-select dash-select--multi dash-select--clickable" class:dash-select--selected={filtros.estado.length > 0} aria-haspopup="listbox" aria-expanded={estadoOpen}
+        onclick={() => { estadoOpen = !estadoOpen; origenOpen = destinoOpen = productoOpen = clienteOpen = transportistaOpen = fechaOpen = false; }}>
+        <span class="icon icon--sm" aria-hidden="true">label</span>
+        <span class="dash-select__label">{estadoLabel()}</span>
+        <span class="icon icon--sm dash-select__caret" aria-hidden="true">expand_more</span>
+      </button>
+      <div class="multi-select-menu" class:multi-select-menu--open={estadoOpen} role="listbox" aria-multiselectable="true">
+        <button type="button" class="multi-select-all" onclick={() => setAllEstado()}>{filtros.estado.length === ESTADOS.length ? 'Quitar todo' : 'Seleccionar todos'}</button>
+        <div class="multi-select-list">
+          {#each ESTADOS as e}
+            <label class="multi-select-item"><input type="checkbox" checked={filtros.estado.includes(e)} onchange={() => toggleEstado(e)} /><span>{STATE_LABELS[e]}</span></label>
+          {/each}
+        </div>
+      </div>
+    </div>
+  {/if}
+
   <!-- Fecha -->
   <div class="dash-filter dash-filter--select" bind:this={fechaContainerRef}>
     <span class="dash-filter__label">Fecha</span>
-    <button type="button" class="dash-select dash-select--clickable" aria-haspopup="listbox" aria-expanded={fechaOpen}
+    <button type="button" class="dash-select dash-select--clickable" class:dash-select--selected={filtros.fecha !== PERIODO_POR_DEFECTO} aria-haspopup="listbox" aria-expanded={fechaOpen}
       onclick={() => { fechaOpen = !fechaOpen; productoOpen = clienteOpen = transportistaOpen = origenOpen = destinoOpen = false; }}>
       <span class="icon icon--sm" aria-hidden="true">calendar_month</span>
       <span class="dash-select__label">{fechaSelectedLabel()}</span>

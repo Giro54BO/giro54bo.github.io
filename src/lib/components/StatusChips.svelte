@@ -13,20 +13,22 @@
 	]);
 
 	function toggle(estado: TripState | null) {
-		filtros.estado = filtros.estado === estado ? null : estado;
+		if (estado === null) { filtros.estado = []; return; }
+		filtros.estado = filtros.estado.includes(estado)
+			? filtros.estado.filter((e) => e !== estado)
+			: [...filtros.estado, estado];
 	}
 </script>
 
 <div class="status-filter" role="group" aria-label="Filtros por estado">
-	<span class="status-filter__label">Estado</span>
-	<div class="status-chips">
-		<button class="filter-chip" class:filter-chip--active={filtros.estado === null} type="button" onclick={() => toggle(null)} aria-pressed={filtros.estado === null}>
+	<div class="filter-bar">
+		<button class="filter-chip" class:filter-chip--active={filtros.estado.length === 0} type="button" onclick={() => toggle(null)} aria-pressed={filtros.estado.length === 0}>
 			<span class="icon filter-chip__icon" aria-hidden="true">grid_view</span>
-			Todos
+			Todos los estados
 			<span class="filter-chip__count">{filtrarViajes(trips, { includeStatus: false }).length}</span>
 		</button>
 		{#each states as item (item.estado)}
-			<button class="filter-chip" class:filter-chip--active={filtros.estado === item.estado} type="button" onclick={() => toggle(item.estado)} aria-pressed={filtros.estado === item.estado}>
+			<button class="filter-chip" class:filter-chip--active={filtros.estado.includes(item.estado)} type="button" onclick={() => toggle(item.estado)} aria-pressed={filtros.estado.includes(item.estado)}>
 				<span class="icon filter-chip__icon" aria-hidden="true">{STATE_ICONS[item.estado]}</span>
 				{STATE_LABELS[item.estado]}
 				<span class="filter-chip__count">{item.count}</span>
