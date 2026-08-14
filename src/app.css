@@ -590,7 +590,9 @@ body {
 .dash-layout__map--empty .dash-layout__search { position: static; }
 
 .dash-filters-panel { flex: 0 0 300px; align-self: stretch; display: flex; flex-direction: column; gap: var(--space-4); padding: var(--space-5); background: var(--surface-card); border: 1px solid var(--blue-light-active); border-radius: var(--radius-xl); box-shadow: var(--shadow-card); }
-.dash-filters-panel__title { font: 700 var(--text-sm) var(--font-body); letter-spacing: 0.04em; color: var(--blue-dark); }
+/* En escritorio el título ya queda alineado con los campos (sin relleno);
+   en móvil recibe relleno horizontal (ver media query ≤700px). */
+.dash-filters-panel__title { padding-inline: 0; font: 700 var(--text-sm) var(--font-body); letter-spacing: 0.04em; color: var(--blue-dark); }
 .dash-filters-panel__body { flex: 1 1 auto; min-height: 0; }
 .dash-filters-panel__foot { margin-top: auto; padding-top: var(--space-4); border-top: 1px solid var(--blue-light-active); }
 .dash-filters-panel__foot .filter-section__clear { width: 100%; min-width: 0; }
@@ -610,6 +612,10 @@ body {
 }
 @media (max-width: 700px) {
 	.dash-filters-panel .dash-filter { flex-basis: 100% !important; }
+	/* Menos relleno horizontal en móvil: los filtros aprovechan el ancho. */
+	.dash-filters-panel { padding-inline: var(--space-3); }
+	/* El título sí lleva relleno horizontal en móvil. */
+	.dash-filters-panel__title { padding-inline: var(--space-5); }
 }
 
 .cards-container { position: relative; font-variant-numeric: lining-nums tabular-nums; font-feature-settings: 'lnum' 1, 'tnum' 1; }
