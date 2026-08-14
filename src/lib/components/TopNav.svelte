@@ -5,6 +5,22 @@
 
 	const alertCount = alertas.length;
 
+	// En móvil el header crece a dos filas (las pestañas bajan de línea), así
+	// que su altura ya no es la fija de escritorio. Publicamos la altura real
+	// como variable CSS para que los elementos "sticky" de las páginas (buscador
+	// de Viajes/Incidencias) se posicionen justo debajo, sin quedar tapados.
+	let headerEl: HTMLElement | undefined = $state();
+
+	$effect(() => {
+		if (!headerEl) return;
+		const el = headerEl;
+		const update = () => document.documentElement.style.setProperty('--header-height', `${el.offsetHeight}px`);
+		update();
+		const observer = new ResizeObserver(update);
+		observer.observe(el);
+		return () => observer.disconnect();
+	});
+
 	const navItems: { href: string; label: string; icon: string; section: string; badge?: number }[] = [
 		{ href: '/dashboard', label: 'Dashboard',   icon: 'grid_view', section: 'dashboard' },
 		{ href: '/viajes',    label: 'Viajes',      icon: 'route',      section: 'viajes' },
@@ -18,7 +34,7 @@
 	);
 </script>
 
-<header class="topnav">
+<header class="topnav" bind:this={headerEl}>
 	<a href="/" class="topnav__logo" aria-label="IASA Industrias de Aceite S.A. — Inicio">
 		<img src={logo} alt="IASA" />
 	</a>

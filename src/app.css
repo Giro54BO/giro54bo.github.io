@@ -84,6 +84,11 @@
 	--status-incidencia-bg:        var(--error-bg);   /* #ffebee — DS incidencia */
 	--status-incidencia-ink:       var(--error-ink);  /* #e53935 — DS incidencia */
 
+	/* Altura real del header, actualizada por TopNav.svelte (crece en móvil
+	   cuando las pestañas pasan a una segunda línea). El valor fijo es el
+	   fallback de escritorio (una sola línea). */
+	--header-height: 75px;
+
 	/* ── Z-index scale ── */
 	--z-dropdown:       100;
 	--z-sticky:         200;
@@ -340,7 +345,7 @@ body {
    filtros activos ni el botón para ocultarlos. */
 .viajes .viajes-sticky {
 	position: sticky;
-	top: 75px;
+	top: var(--header-height);
 	z-index: calc(var(--z-sticky) - 1);
 	display: flex;
 	flex-direction: column;
@@ -732,7 +737,7 @@ body {
 	align-items: center;
 	gap: var(--space-4);
 	position: sticky;
-	top: 75px;
+	top: var(--header-height);
 	z-index: calc(var(--z-sticky) - 1);
 	background: var(--bg);
 	padding: var(--space-4) 0;
