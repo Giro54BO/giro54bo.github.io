@@ -3,11 +3,9 @@
 	import { filtros, PERIODOS } from '$lib/data/dash-filters.svelte';
 
 	let {
-		onOpenFilters,
-		onClearSearch,
+		onClearAll,
 	}: {
-		onOpenFilters: () => void;
-		onClearSearch: () => void;
+		onClearAll: () => void;
 	} = $props();
 
 	const periodLabel = $derived(
@@ -29,16 +27,17 @@
 		{/if}
 	</p>
 
+	<ul class="search-empty-state__suggestions">
+		<li>Cambia el rango de fecha</li>
+		<li>Ajusta los filtros aplicados</li>
+	</ul>
+
 	<div class="search-empty-state__date">
 		<DateRangeBar />
 	</div>
 
 	<div class="search-empty-state__actions">
-		<button class="btn-outline" type="button" onclick={onOpenFilters}>
-			<span class="icon icon--sm" aria-hidden="true">calendar_month</span>
-			Cambiar rango de fecha
-		</button>
-		<button class="btn-outline btn-outline--muted" type="button" onclick={onClearSearch}>
+		<button class="btn-outline btn-outline--muted" type="button" onclick={onClearAll}>
 			<span class="icon icon--sm" aria-hidden="true">close</span>
 			Limpiar búsqueda
 		</button>

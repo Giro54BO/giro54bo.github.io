@@ -31,7 +31,7 @@
       </div>
 
       {#if filteredTrips.length === 0}
-        <SearchEmptyState onOpenFilters={() => {}} onClearSearch={() => { filtros.busqueda = ''; }} />
+        <SearchEmptyState onClearAll={limpiarFiltros} />
       {:else}
         {#key mapKey}
           <TransitMap trips={filteredTrips} collapsible={false} />

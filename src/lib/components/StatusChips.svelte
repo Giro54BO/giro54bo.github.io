@@ -29,7 +29,9 @@
 		</button>
 		{#each states as item (item.estado)}
 			<button class="filter-chip" class:filter-chip--active={filtros.estado.includes(item.estado)} type="button" onclick={() => toggle(item.estado)} aria-pressed={filtros.estado.includes(item.estado)}>
-				<span class="icon filter-chip__icon" aria-hidden="true">{STATE_ICONS[item.estado]}</span>
+				<span class="filter-chip__icon-wrap filter-chip__icon-wrap--{item.estado}">
+					<span class="icon filter-chip__icon" aria-hidden="true">{STATE_ICONS[item.estado]}</span>
+				</span>
 				{STATE_LABELS[item.estado]}
 				<span class="filter-chip__count">{item.count}</span>
 			</button>

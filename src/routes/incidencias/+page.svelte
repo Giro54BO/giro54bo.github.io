@@ -79,9 +79,8 @@
     <a href="/incidencias/nueva" class="btn-outline inc-cta">Registrar incidencia <span class="icon" aria-hidden="true">add</span></a>
   </div>
 
-  <!-- La barra de tipos queda enmarcada por dos líneas a igual distancia
-       (arriba y abajo), mismo color que el separador de Viajes. -->
-  <div class="filters-divider" aria-hidden="true"></div>
+  <!-- La barra de tipos queda enmarcada por una línea inferior, misma
+       distancia y color que el separador de Viajes. -->
   <div class="inc-controls">
     <div class="filter-bar inc-chips" role="group" aria-label="Filtrar por tipo de incidencia">
       <button class="filter-chip" class:filter-chip--active={tipo === null} type="button" onclick={() => toggleTipo(null)} aria-pressed={tipo === null}>
@@ -91,7 +90,9 @@
       </button>
       {#each TIPOS as t (t)}
         <button class="filter-chip" class:filter-chip--active={tipo === t} type="button" onclick={() => toggleTipo(t)} aria-pressed={tipo === t}>
-          <span class="icon filter-chip__icon" aria-hidden="true">{ALERTA_TYPE_ICONS[t]}</span>
+          <span class="filter-chip__icon-wrap filter-chip__icon-wrap--{t}">
+            <span class="icon filter-chip__icon" aria-hidden="true">{ALERTA_TYPE_ICONS[t]}</span>
+          </span>
           {ALERTA_TYPE_LABELS[t]}
           <span class="filter-chip__count">{counts[t]}</span>
         </button>

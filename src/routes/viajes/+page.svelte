@@ -60,41 +60,39 @@
 <div class="viajes" id="main-content">
   <!-- Sin título de página: la barra de navegación ya indica la sección; el
        buscador se alinea a la izquierda y ocupa el ancho disponible. -->
-  <div class="viajes-header">
-    <div class="viajes-search-row">
-      <TripSearch />
+  <div class="viajes-sticky">
+    <div class="viajes-header">
+      <div class="viajes-search-row">
+        <TripSearch />
+      </div>
+      <button class="filters-toggle" type="button" aria-expanded={filtersOpen} aria-controls="viajes-filters" onclick={() => filtersOpen = !filtersOpen}>
+        <span class="icon" aria-hidden="true">filter_alt</span>
+        <span>{filtersOpen ? 'CERRAR FILTROS' : 'VER FILTROS'}</span>
+        <span class="icon" aria-hidden="true">{filtersOpen ? 'expand_less' : 'expand_more'}</span>
+      </button>
     </div>
-    <button class="filters-toggle" type="button" aria-expanded={filtersOpen} aria-controls="viajes-filters" onclick={() => filtersOpen = !filtersOpen}>
-      <span class="icon" aria-hidden="true">filter_alt</span>
-      <span>VER FILTROS</span>
-      <span class="icon" aria-hidden="true">{filtersOpen ? 'expand_less' : 'expand_more'}</span>
-    </button>
-  </div>
 
-  {#if filtersOpen}
-    <div class="filters-divider" aria-hidden="true"></div>
-    <section class="filter-section" id="viajes-filters" aria-label="Filtros de Viajes">
-      <DashFilters />
-      <StatusChips />
-      {#if hasFilters}
-        <button class="filter-section__clear filter-section__clear--full" type="button" onclick={limpiarFiltros}>
-          LIMPIAR FILTROS
-          <span class="icon" aria-hidden="true">close</span>
-        </button>
-      {/if}
-    </section>
-    <!-- Borde inferior a la misma distancia que la línea superior (el gap de
-         `.viajes` es simétrico), cerrando la barra de estado. -->
-    <div class="filters-divider" aria-hidden="true"></div>
-  {/if}
+    {#if filtersOpen}
+      <section class="filter-section" id="viajes-filters" aria-label="Filtros de Viajes">
+        <DashFilters />
+        <StatusChips />
+        {#if hasFilters}
+          <button class="filter-section__clear filter-section__clear--full" type="button" onclick={limpiarFiltros}>
+            LIMPIAR FILTROS
+            <span class="icon" aria-hidden="true">close</span>
+          </button>
+        {/if}
+      </section>
+    {/if}
+  </div>
 
   <div class="cards-container" role="region" aria-label="Tabla de despachos activos">
     <div class="cards-header" aria-hidden="true">
       <span>Correlativo único / Fecha de despacho</span>
       <span>Nº de entrega SAP / Código de cliente SAP</span>
       <span>Nº de pedido SAP / Nº de transporte SAP</span>
-      <span>Código de ruta / Desglose de la ruta / Tiempo estimado de llegada</span>
-      <span>Carnet chofer / Nombre del proveedor de transporte / Placa</span>
+      <span>Código de ruta / Tiempo estimado de llegada / Transito</span>
+      <span>Carnet chofer / Transportadora / Placa</span>
       <span></span>
     </div>
 
@@ -135,7 +133,7 @@
             </div>
 
             <div class="cell-stack">
-              <span class="cell-label">Código de ruta / Desglose de la ruta / Tiempo estimado de llegada</span>
+              <span class="cell-label">Código de ruta / Tiempo estimado de llegada / Transito</span>
               <span class="cell-secondary">{trip.rutaCodigo}</span>
               <span class="route-line">
                 {#each ruta as segmento, si}
@@ -155,7 +153,7 @@
             </div>
 
             <div class="cell-stack">
-              <span class="cell-label">Carnet chofer / Nombre del proveedor de transporte / Placa</span>
+              <span class="cell-label">Carnet chofer / Transportadora / Placa</span>
               <span class="cell-line">
                 <span class="icon icon--sm cell-line__icon" aria-hidden="true">id_card</span>
                 <span class="cell-primary">{trip.conductor}</span>
@@ -174,7 +172,7 @@
           </div>
         </a>
       {:else}
-        <SearchEmptyState onOpenFilters={() => { filtersOpen = true; }} onClearSearch={() => { filtros.busqueda = ''; }} />
+        <SearchEmptyState onClearAll={limpiarFiltros} />
       {/each}
     </div>
 
