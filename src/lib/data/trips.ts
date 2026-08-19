@@ -859,19 +859,35 @@ const rawTrips: Trip[] = [
 
 // Keep the demo's operational dates aligned with the current week without
 // changing the relative timing between trips, ETAs, geofences, and events.
-// +14 días (2 semanas): las fechas base de julio caen sobre la semana en curso,
-// de modo que los despachos activos (raw 27–29 jul) quedan en "esta semana".
+// Las fechas base de julio se desplazan tantos días como haga falta para que el
+// lunes base (27 jul 2026, día de los despachos activos) caiga sobre el lunes de
+// la semana en curso. Al ser dinámico, el tablero siempre trae datos "de esta
+// semana" el día que se demuestre, sin importar cuándo se ejecute.
+const MES_ABBR = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+
+/** Lunes de la semana a la que pertenece `d`. */
+function lunesDeFecha(d: Date): Date {
+	const x = new Date(d);
+	x.setHours(0, 0, 0, 0);
+	x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); // 0 = lunes … 6 = domingo
+	return x;
+}
+
+// Lunes base de los datos crudos (27 jul 2026) → lunes de la semana actual.
+const RAW_ANCHOR = new Date(2026, 6, 27);
+const DEMO_SHIFT_DAYS = Math.round((lunesDeFecha(new Date()).getTime() - RAW_ANCHOR.getTime()) / 86_400_000);
+
 function shiftDemoDates(value: unknown): unknown {
 	if (typeof value === 'string') {
 		const shift = (day: number, month: number, year: number) => {
-			const date = new Date(year, month, day + 14);
+			const date = new Date(year, month, day + DEMO_SHIFT_DAYS);
 			return { day: date.getDate(), month: date.getMonth(), year: date.getFullYear() };
 		};
 
 		return value
 			.replace(/(\d{1,2})\/(Jul|07)\/(2026)/gi, (_, day, month, year) => {
 				const shifted = shift(Number(day), 6, Number(year));
-				return `${String(shifted.day).padStart(2, '0')}/${shifted.month === 7 ? 'Ago' : 'Jul'}/${shifted.year}`;
+				return `${String(shifted.day).padStart(2, '0')}/${MES_ABBR[shifted.month]}/${shifted.year}`;
 			})
 			.replace(/(\d{1,2})\/(0?7)\/(2026)/g, (_, day, month, year) => {
 				const shifted = shift(Number(day), 6, Number(year));
@@ -879,7 +895,7 @@ function shiftDemoDates(value: unknown): unknown {
 			})
 			.replace(/(\d{1,2})\s+(Jul\.?)((?:\s+2026)?)/gi, (_, day, month, yearSuffix) => {
 				const shifted = shift(Number(day), 6, 2026);
-				const monthLabel = shifted.month === 7 ? 'Ago' : 'Jul';
+				const monthLabel = MES_ABBR[shifted.month];
 				const punctuation = month.endsWith('.') ? '.' : '';
 				return `${shifted.day} ${monthLabel}${punctuation}${yearSuffix}`;
 			});
