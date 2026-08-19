@@ -8,11 +8,14 @@
     type AlertaTipo,
     type Trip,
   } from '$lib/data/trips';
+  import { incidenciasCreadas } from '$lib/data/incidencias-creadas.svelte';
 
   let query = $state('');
   let tipo = $state<AlertaTipo | null>(null);
 
   const tripsById = new Map<string, Trip>(trips.map((t) => [t.id, t]));
+  // Incidencias del catálogo + las registradas en la sesión (éstas primero).
+  const todasAlertas = $derived([...incidenciasCreadas.items, ...alertas]);
   const TIPOS: AlertaTipo[] = ['critico', 'retraso', 'parada', 'desvio'];
   const TIPO_COLORS: Record<AlertaTipo, { bg: string; ink: string }> = {
     critico: { bg: 'var(--error-bg)', ink: 'var(--error-ink)' },
@@ -28,8 +31,8 @@
   // Búsqueda: tolerante, sobre mensaje + datos del despacho vinculado.
   const searched = $derived.by(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return alertas;
-    return alertas.filter((a) => {
+    if (!q) return todasAlertas;
+    return todasAlertas.filter((a) => {
       const t = tripOf(a);
       return [a.mensaje, a.unidad, a.tripId, ALERTA_TYPE_LABELS[a.tipo], t?.conductor, t?.transportista, t?.destino, t?.rutaCodigo]
         .filter(Boolean)

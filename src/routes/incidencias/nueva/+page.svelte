@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
-	import { trips, STATE_LABELS } from '$lib/data/trips';
+	import { trips, STATE_LABELS, type Alerta, type AlertaTipo } from '$lib/data/trips';
+	import { registrarIncidencia } from '$lib/data/incidencias-creadas.svelte';
 	import StatusBadge from '$lib/components/StatusBadge.svelte';
 
 	const activeTrips = trips.filter(t => t.estado !== 'en-retorno');
@@ -86,12 +87,37 @@
 		}
 	});
 
+	// El formulario maneja tipos operativos detallados; la lista de incidencias
+	// usa 4 categorías. Se asigna cada tipo a la que mejor lo representa.
+	const TIPO_A_ALERTA: Record<IncidentTipo, AlertaTipo> = {
+		'accidente':             'critico',
+		'falla-mecanica':        'critico',
+		'bloqueo':               'parada',
+		'problema-documental':   'retraso',
+		'observado-por-calidad': 'retraso',
+		'demora-frontera':       'retraso',
+		'saturacion-descarga':   'parada',
+	};
+
 	async function handleSubmit(e: SubmitEvent) {
 		e.preventDefault();
 		submitted = true;
 		if (Object.keys(errors).length > 0) return;
 		saving = true;
 		await new Promise(r => setTimeout(r, 700));
+
+		// Registra la incidencia para que aparezca en la lista global y en la
+		// ficha del despacho afectado (salvo las globales, sin despacho).
+		const tipo = form.tipo as IncidentTipo;
+		const nueva: Alerta = {
+			id: `INC-USR-${Date.now()}`,
+			tipo: TIPO_A_ALERTA[tipo],
+			mensaje: form.descripcion.trim(),
+			tiempo: 'hace un momento',
+			...(form.global ? {} : { tripId: form.tripId, unidad: selectedTrip?.unidad }),
+		};
+		registrarIncidencia(nueva);
+
 		saving = false;
 		registrada = true;
 	}

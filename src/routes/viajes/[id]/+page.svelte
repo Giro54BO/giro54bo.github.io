@@ -3,6 +3,7 @@
 	import StatusBadge from '$lib/components/StatusBadge.svelte';
 	import TripMap from '$lib/components/TripMap.svelte';
 	import { alertas, ALERTA_TYPE_ICONS, ALERTA_TYPE_LABELS, STATE_LABELS, type TripState } from '$lib/data/trips';
+	import { incidenciasCreadas } from '$lib/data/incidencias-creadas.svelte';
 	import type { TripEvent } from '$lib/data/trips';
 	import { GEOCERCAS, GEOCERCA_ICONS, GEOCERCA_TIPO_LABELS, type Geocerca } from '$lib/data/geo';
 	import { parseKg, fmtTon, kgToTon } from '$lib/data/units';
@@ -153,6 +154,8 @@
 
 	/** "hace 30 min" / "hace 3 h" / "hace 2 días" → minutos transcurridos. */
 	function minutosDesde(tiempo: string): number {
+		// Las incidencias recién creadas ("hace un momento") son las más recientes.
+		if (/momento|ahora|reci[eé]n/i.test(tiempo)) return -1;
 		const m = tiempo.match(/(\d+)\s*(min|h|d)/i);
 		if (!m) return Number.MAX_SAFE_INTEGER;
 		const n = +m[1];
@@ -163,7 +166,7 @@
 	// Todas las incidencias del despacho en una sola lista, más reciente primero.
 	// Las resueltas permanecen (con su etiqueta); sólo salen las eliminadas.
 	const tripAlertas = $derived(
-		alertas
+		[...incidenciasCreadas.items, ...alertas]
 			.filter(a => a.tripId === trip.id && !dismissed.includes(a.id))
 			.slice()
 			.sort((a, b) => minutosDesde(a.tiempo) - minutosDesde(b.tiempo))
