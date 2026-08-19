@@ -169,6 +169,9 @@
 			requestAnimationFrame(() => mapInstance?.resize());
 		};
 		document.addEventListener('fullscreenchange', handleFullscreenChange);
+		// Si el buscador cambió `mapKey` y el mapa se remontó mientras estábamos en
+		// pantalla completa, sincroniza el estado inicial (icono salir/entrar).
+		handleFullscreenChange();
 
 		if (!webglDisponible()) {
 			mapFailed = true;

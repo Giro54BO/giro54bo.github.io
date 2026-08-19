@@ -617,7 +617,9 @@ body {
    (la tarjeta del mapa —posición absoluta— llena el contenedor y el buscador
    queda por encima, dejando libre el botón de pantalla completa). */
 .dash-layout__map:fullscreen { background: var(--surface-2); }
-.dash-layout__map:fullscreen .dash-layout__search { top: 16px; }
+/* En pantalla completa la tarjeta del mapa lleva z-index alto (1000); el
+   buscador debe quedar por encima para no ocultarse tras el mapa. */
+.dash-layout__map:fullscreen .dash-layout__search { top: 16px; z-index: 1001; }
 /* Buscador superpuesto en la parte superior del mapa (deja libre el botón de
    pantalla completa, arriba a la derecha). */
 .dash-layout__search { position: absolute; z-index: 6; top: 16px; left: 16px; right: 66px; }
